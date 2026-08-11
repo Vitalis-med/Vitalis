@@ -268,6 +268,21 @@
 
   /* ---- Schedule ---- */
   .grid-card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:4px; overflow-x:auto;}
+  .cronograma-layout{display:flex; gap:16px; align-items:flex-start;}
+  .sched-side{width:230px; flex-shrink:0;}
+  .drag-chip{
+    background:var(--card-2); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:8px 10px; margin-bottom:7px; cursor:grab; font-size:11.5px; font-weight:500; color:var(--text);
+    transition:border-color .1s ease;
+  }
+  .drag-chip:hover{border-color:var(--primary);}
+  .drag-chip:active{cursor:grabbing;}
+  .drag-chip.dragging{opacity:.4;}
+  .drag-chip .dc-meta{display:flex; align-items:center; gap:6px; margin-top:5px; flex-wrap:wrap;}
+  .drag-chip .dc-cat{font-size:9.5px; font-weight:600; color:var(--text-soft); display:inline-flex; align-items:center; gap:4px;}
+  .drag-chip .dc-cat i{width:5px; height:5px; border-radius:50%; display:inline-block;}
+  .drag-chip .dc-sched{font-size:9.5px; color:var(--primary); font-family:'IBM Plex Mono',monospace;}
+  table.sched td.drop-target{outline:2px dashed var(--primary); outline-offset:-2px; background:var(--primary-soft);}
   table.sched{border-collapse:separate; border-spacing:0; width:100%; min-width:980px; table-layout:fixed;}
   table.sched th{
     font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; text-transform:uppercase;
@@ -715,15 +730,30 @@
     <header class="page-head">
       <div>
         <h1>Cronograma semanal</h1>
-        <p>Terceiro semestre 2026-2 · aulas oficiais + rotina pessoal · clique numa célula para editar</p>
+        <p>Terceiro semestre 2026-2 · aulas oficiais + rotina pessoal · clique numa célula ou arraste uma tarefa pra agendar</p>
       </div>
     </header>
-    <div class="grid-card">
-      <table class="sched" id="schedTable">
-        <thead><tr id="schedHead"><th class="time-col">Hora</th></tr></thead>
-        <tbody id="schedBody"></tbody>
-      </table>
-      <div class="legend" id="legend"></div>
+    <div class="task-toolbar" style="margin-bottom:14px;">
+      <div>
+        <div class="filter-group-label">Cronograma de</div>
+        <div class="chip-row" id="schedOwnerFilters"></div>
+      </div>
+    </div>
+    <div class="cronograma-layout">
+      <div class="grid-card" style="flex:1; min-width:0;">
+        <table class="sched" id="schedTable">
+          <thead><tr id="schedHead"><th class="time-col">Hora</th></tr></thead>
+          <tbody id="schedBody"></tbody>
+        </table>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="sched-side">
+        <div class="side-card">
+          <h4>Arraste pra agendar</h4>
+          <p class="hint" style="margin:0 0 10px;">Tarefas pendentes de <span id="schedDragOwnerName"></span>. Arrasta uma direto pra uma célula do cronograma.</p>
+          <div id="schedDragList"></div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1261,7 +1291,7 @@
 /* ======================================================================
    CHAVES DE ARMAZENAMENTO
 ====================================================================== */
-const SCHEDULE_KEY = "painel_estudos_horario_v4";
+const SCHEDULE_KEY = "painel_estudos_horario_v5";
 const NOTES_KEY = "painel_estudos_notas_v3";
 const TASKS_KEY = "painel_estudos_tarefas_v3";
 const TAGS_KEY = "painel_estudos_tags_v1";
@@ -1431,21 +1461,21 @@ Object.keys(DEFAULT_SCHEDULE).forEach(k=>{
 /* ======================================================================
    ESTADO
 ====================================================================== */
-let schedule = load(SCHEDULE_KEY, null);
-if(schedule === null){
-  const old = load("painel_estudos_horario_v3", null);
-  if(old){
-    schedule = {};
-    Object.keys(old).forEach(k=>{
-      const [d,h] = k.split("-");
-      const hh = h.slice(0,2);
-      ["00","15","30","45"].forEach(mm=>{ schedule[d+"-"+hh+":"+mm] = old[k]; });
-    });
-  }else{
-    schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE_Q));
-  }
-  save(SCHEDULE_KEY, schedule);
+// cronograma agora é por pessoa: schedules[userId] = { "dia-hora": {label,note,color} }
+let schedules = load(SCHEDULE_KEY, null);
+if(schedules === null){
+  schedules = {};
+  const oldFlat = load("painel_estudos_horario_v4", null); // formato anterior: um mapa só, compartilhado
+  USERS.forEach(u=>{
+    schedules[u.id] = oldFlat ? JSON.parse(JSON.stringify(oldFlat)) : JSON.parse(JSON.stringify(DEFAULT_SCHEDULE_Q));
+  });
+  save(SCHEDULE_KEY, schedules);
 }
+function getSchedule(uid){
+  if(!schedules[uid]) schedules[uid] = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE_Q));
+  return schedules[uid];
+}
+let scheduleViewUserId = currentUserId;
 let notes = load(NOTES_KEY, []);
 let tasks = load(TASKS_KEY, null);
 let habits = load(HABITS_KEY, null);
@@ -1456,6 +1486,7 @@ let ownerFilter = currentUserId;
 let editingNoteId = null;
 let autosaveTimer = null;
 let draggedTaskId = null;
+let draggedScheduleTaskId = null;
 
 // migra tarefas do formato antigo, se existir
 if(tasks === null){
@@ -1509,6 +1540,7 @@ document.querySelectorAll(".nav-item").forEach(btn=>{
     document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
     btn.classList.add("active");
     document.getElementById(btn.dataset.tab).classList.add("active");
+    if(btn.dataset.tab === "cronograma"){ renderHead(); renderBody(); renderScheduleOwnerFilter(); renderSchedDragTasks(); }
     if(btn.dataset.tab === "notas") renderNotes();
     if(btn.dataset.tab === "busca") renderSearch();
     if(btn.dataset.tab === "tarefas") renderTasks();
@@ -1538,6 +1570,7 @@ function renderHead(){
 function renderBody(){
   const body = document.getElementById("schedBody");
   body.innerHTML = "";
+  const schedule = getSchedule(scheduleViewUserId);
   const ti = todayIndex();
   const now = new Date();
   const nowMinutes = now.getHours()*60 + now.getMinutes();
@@ -1552,6 +1585,26 @@ function renderBody(){
     marker.className = "now-line";
     marker.style.top = ((nowMinutes - startMin) * (ROW_H/15)) + "px";
     td.appendChild(marker);
+  }
+
+  function makeDroppable(td, dayKey, time){
+    td.addEventListener("dragover", e=>{ e.preventDefault(); td.classList.add("drop-target"); });
+    td.addEventListener("dragleave", ()=> td.classList.remove("drop-target"));
+    td.addEventListener("drop", e=>{
+      e.preventDefault();
+      td.classList.remove("drop-target");
+      if(!draggedScheduleTaskId) return;
+      const t = tasks.find(x=>x.id===draggedScheduleTaskId);
+      draggedScheduleTaskId = null;
+      if(!t) return;
+      const span = t.scheduledAt ? t.scheduledAt.span : 4;
+      if(t.scheduledAt) clearRange(t.owner, t.scheduledAt.day, t.scheduledAt.time, t.scheduledAt.span);
+      writeRange(t.owner, dayKey, time, span, {label:t.text, note:"Tarefa · "+t.category, color:categoryColor(t.category), taskId:t.id});
+      t.scheduledAt = {day:dayKey, time, span};
+      save(SCHEDULE_KEY, schedules); save(TASKS_KEY, tasks);
+      renderBody(); renderSchedDragTasks();
+      toast("Tarefa agendada");
+    });
   }
 
   HOURS.forEach((time, rowIdx)=>{
@@ -1584,6 +1637,7 @@ function renderBody(){
 
       const key = dayKey + "-" + time;
       const entry = schedule[key] || {label:"",note:"",color:""};
+      makeDroppable(td, dayKey, time);
 
       if(!entry.label){
         const btn = document.createElement("button");
@@ -1626,6 +1680,52 @@ function renderLegend(){
   el.innerHTML = '<b>Legenda</b>';
   TAGS.forEach(c=>{ el.innerHTML += '<span><i style="background:'+c.hex+'"></i>'+escapeHtml(c.name)+'</span>'; });
 }
+function renderScheduleOwnerFilter(){
+  const wrap = document.getElementById("schedOwnerFilters");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  USERS.forEach(u=>{
+    const chip = document.createElement("button");
+    chip.className = "cat-chip" + (scheduleViewUserId===u.id ? " active" : "");
+    chip.textContent = u.id===currentUserId ? u.name+" (eu)" : u.name;
+    chip.addEventListener("click", ()=>{
+      scheduleViewUserId = u.id;
+      renderScheduleOwnerFilter(); renderHead(); renderBody(); renderSchedDragTasks();
+    });
+    wrap.appendChild(chip);
+  });
+}
+function renderSchedDragTasks(){
+  const wrap = document.getElementById("schedDragList");
+  if(!wrap) return;
+  const owner = userById(scheduleViewUserId);
+  const nameEl = document.getElementById("schedDragOwnerName");
+  if(nameEl) nameEl.textContent = owner ? owner.name : "—";
+  const pending = tasks.filter(t=>t.owner===scheduleViewUserId && t.status!=="done");
+  if(pending.length===0){
+    wrap.innerHTML = '<div class="kcol-empty" style="padding:10px 0;">Nenhuma tarefa pendente</div>';
+    return;
+  }
+  wrap.innerHTML = "";
+  pending.forEach(t=>{
+    const prio = PRIORITIES[t.priority] || PRIORITIES.media;
+    const chip = document.createElement("div");
+    chip.className = "drag-chip";
+    chip.draggable = true;
+    chip.innerHTML = `
+      <div>${escapeHtml(t.text)}</div>
+      <div class="dc-meta">
+        <span class="dc-cat"><i style="background:${categoryColor(t.category)}"></i>${escapeHtml(t.category)}</span>
+        <span class="dc-cat"><i style="background:${prio.hex}"></i>${prio.label}</span>
+      </div>
+      ${t.scheduledAt ? '<div class="dc-sched">📅 '+DAYS[t.scheduledAt.day]+' '+t.scheduledAt.time+'</div>' : ''}
+    `;
+    chip.addEventListener("dragstart", ()=>{ draggedScheduleTaskId = t.id; chip.classList.add("dragging"); });
+    chip.addEventListener("dragend", ()=>{ chip.classList.remove("dragging"); });
+    chip.addEventListener("click", ()=> openTaskModal(t.id));
+    wrap.appendChild(chip);
+  });
+}
 function renderCellSwatches(){
   const wrap = document.getElementById("cellSwatches");
   wrap.innerHTML = "";
@@ -1658,6 +1758,7 @@ function fillDurationSelect(sel, currentSpan){
 }
 function openCellModal(dayKey, time, dayName, span){
   activeCellDay = dayKey; activeCellTime = time; activeCellSpan = span || 1;
+  const schedule = getSchedule(scheduleViewUserId);
   const entry = schedule[dayKey+"-"+time] || {label:"",note:"",color:""};
   document.getElementById("cellMeta").textContent = dayName + " · " + spanLabel(time, activeCellSpan);
   document.getElementById("cellLabel").value = entry.label || "";
@@ -1672,11 +1773,13 @@ function closeCellModal(){
   document.getElementById("overlayCell").classList.remove("open");
   activeCellDay = null; activeCellTime = null; activeCellSpan = 1;
 }
-function clearRange(dayKey, startTime, span){
+function clearRange(uid, dayKey, startTime, span){
+  const schedule = getSchedule(uid);
   let mins = timeToMinutes(startTime);
   for(let i=0;i<span;i++){ delete schedule[dayKey+"-"+minutesToTime(mins)]; mins += 15; }
 }
-function writeRange(dayKey, startTime, span, data){
+function writeRange(uid, dayKey, startTime, span, data){
+  const schedule = getSchedule(uid);
   let mins = timeToMinutes(startTime);
   const dayLunch = LUNCH_DAYS_HOUR[dayKey];
   for(let i=0;i<span;i++){
@@ -1691,17 +1794,17 @@ document.getElementById("cellCancel").addEventListener("click", closeCellModal);
 document.getElementById("overlayCell").addEventListener("click", e=>{ if(e.target.id==="overlayCell") closeCellModal(); });
 document.getElementById("cellClear").addEventListener("click", ()=>{
   if(!activeCellDay) return;
-  clearRange(activeCellDay, activeCellTime, activeCellSpan);
-  save(SCHEDULE_KEY, schedule); renderBody(); closeCellModal();
+  clearRange(scheduleViewUserId, activeCellDay, activeCellTime, activeCellSpan);
+  save(SCHEDULE_KEY, schedules); renderBody(); closeCellModal();
 });
 document.getElementById("cellSave").addEventListener("click", ()=>{
   if(!activeCellDay) return;
   const label = document.getElementById("cellLabel").value.trim();
   const note = document.getElementById("cellNote").value.trim();
   const duration = parseInt(document.getElementById("cellDuration").value,10) || 1;
-  clearRange(activeCellDay, activeCellTime, activeCellSpan);
-  if(label) writeRange(activeCellDay, activeCellTime, duration, {label, note, color:selectedColor});
-  save(SCHEDULE_KEY, schedule); renderBody(); closeCellModal();
+  clearRange(scheduleViewUserId, activeCellDay, activeCellTime, activeCellSpan);
+  if(label) writeRange(scheduleViewUserId, activeCellDay, activeCellTime, duration, {label, note, color:selectedColor});
+  save(SCHEDULE_KEY, schedules); renderBody(); closeCellModal();
 });
 
 /* ======================================================================
@@ -2096,9 +2199,9 @@ function taskCard(t){
   card.querySelector(".tc-text").textContent = t.text;
   card.querySelector(".tc-del").addEventListener("click", (e)=>{
     e.stopPropagation();
-    if(t.scheduledAt) clearRange(t.scheduledAt.day, t.scheduledAt.time, t.scheduledAt.span);
+    if(t.scheduledAt) clearRange(t.owner, t.scheduledAt.day, t.scheduledAt.time, t.scheduledAt.span);
     tasks = tasks.filter(x=>x.id!==t.id);
-    save(TASKS_KEY, tasks); save(SCHEDULE_KEY, schedule);
+    save(TASKS_KEY, tasks); save(SCHEDULE_KEY, schedules);
     renderTasks(); renderBody();
     toast("Tarefa excluída");
   });
@@ -2246,9 +2349,9 @@ function closeTaskModalUI(){
 function cancelTaskModal(){
   if(modalIsNew){
     const t = tasks.find(x=>x.id===modalTaskId);
-    if(t && t.scheduledAt) clearRange(t.scheduledAt.day, t.scheduledAt.time, t.scheduledAt.span);
+    if(t && t.scheduledAt) clearRange(t.owner, t.scheduledAt.day, t.scheduledAt.time, t.scheduledAt.span);
     tasks = tasks.filter(x=>x.id!==modalTaskId);
-    save(TASKS_KEY, tasks); save(SCHEDULE_KEY, schedule);
+    save(TASKS_KEY, tasks); save(SCHEDULE_KEY, schedules);
     renderTasks(); renderBody();
   }
   closeTaskModalUI();
@@ -2279,9 +2382,9 @@ document.getElementById("taskDelete").addEventListener("click", ()=>{
   if(!modalTaskId) return;
   if(!confirm("Excluir esta tarefa? Isso também remove o bloco agendado no cronograma, se houver.")) return;
   const t = tasks.find(x=>x.id===modalTaskId);
-  if(t && t.scheduledAt) clearRange(t.scheduledAt.day, t.scheduledAt.time, t.scheduledAt.span);
+  if(t && t.scheduledAt) clearRange(t.owner, t.scheduledAt.day, t.scheduledAt.time, t.scheduledAt.span);
   tasks = tasks.filter(x=>x.id!==modalTaskId);
-  save(TASKS_KEY, tasks); save(SCHEDULE_KEY, schedule);
+  save(TASKS_KEY, tasks); save(SCHEDULE_KEY, schedules);
   closeTaskModalUI(); renderTasks(); renderBody();
   toast("Tarefa excluída");
 });
@@ -2339,10 +2442,10 @@ function fillTaskSchedFields(t){
     btn.textContent = "Reagendar";
     document.getElementById("unscheduleBtn").addEventListener("click", (e)=>{
       e.stopPropagation();
-      clearRange(t.scheduledAt.day, t.scheduledAt.time, t.scheduledAt.span);
+      clearRange(t.owner, t.scheduledAt.day, t.scheduledAt.time, t.scheduledAt.span);
       t.scheduledAt = null;
-      save(SCHEDULE_KEY, schedule); save(TASKS_KEY, tasks);
-      fillTaskSchedFields(t); renderBody();
+      save(SCHEDULE_KEY, schedules); save(TASKS_KEY, tasks);
+      fillTaskSchedFields(t); renderBody(); renderSchedDragTasks();
       toast("Removido do cronograma");
     });
   }else{
@@ -2358,13 +2461,14 @@ document.getElementById("btnScheduleTask").addEventListener("click", ()=>{
   const day = document.getElementById("taskSchedDay").value;
   const time = document.getElementById("taskSchedTime").value;
   const span = parseInt(document.getElementById("taskSchedDuration").value,10) || 4;
-  if(t.scheduledAt) clearRange(t.scheduledAt.day, t.scheduledAt.time, t.scheduledAt.span);
-  writeRange(day, time, span, {label:t.text, note:"Tarefa · "+t.category, color:categoryColor(t.category), taskId:t.id});
+  if(t.scheduledAt) clearRange(t.owner, t.scheduledAt.day, t.scheduledAt.time, t.scheduledAt.span);
+  writeRange(t.owner, day, time, span, {label:t.text, note:"Tarefa · "+t.category, color:categoryColor(t.category), taskId:t.id});
   t.scheduledAt = {day, time, span};
-  save(SCHEDULE_KEY, schedule); save(TASKS_KEY, tasks);
+  save(SCHEDULE_KEY, schedules); save(TASKS_KEY, tasks);
   fillTaskSchedFields(t);
-  renderBody();
-  toast("Bloco agendado no cronograma");
+  renderBody(); renderSchedDragTasks();
+  if(scheduleViewUserId !== t.owner) toast("Bloco agendado no cronograma de "+((userById(t.owner)||{}).name||"outro perfil"));
+  else toast("Bloco agendado no cronograma");
 });
 
 /* ---- notas vinculadas a esta tarefa ---- */
@@ -2446,9 +2550,11 @@ function renderProfileSwitcher(){
       currentUserId = u.id;
       save(CURRENT_USER_KEY, currentUserId);
       ownerFilter = currentUserId;
+      scheduleViewUserId = currentUserId;
       renderProfileSwitcher();
       renderTasks();
       renderSettings();
+      if(document.getElementById("cronograma").classList.contains("active")){ renderBody(); renderScheduleOwnerFilter(); renderSchedDragTasks(); }
       if(document.getElementById("financeiro").classList.contains("active")) renderFinanceiro();
       if(document.getElementById("dieta").classList.contains("active")) renderDieta();
       toast("Perfil: "+u.name);
@@ -2677,7 +2783,7 @@ document.getElementById("newHabitName").addEventListener("keydown", e=>{ if(e.ke
 
 /* ---- backup: exportar / importar / limpar ---- */
 function exportData(){
-  const payload = { schedule, notes, tasks, tags:TAGS, categories:CATEGORIES, users:USERS, habits, currentUserId,
+  const payload = { schedules, notes, tasks, tags:TAGS, categories:CATEGORIES, users:USERS, habits, currentUserId,
     finTx, finCategories:FIN_CATEGORIES, currency:CURRENCY, diet:dietData, exportedAt:new Date().toISOString() };
   const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
   const url = URL.createObjectURL(blob);
@@ -2697,7 +2803,8 @@ document.getElementById("importFileInput").addEventListener("change", (e)=>{
     try{
       const data = JSON.parse(ev.target.result);
       if(!confirm("Importar esse backup vai substituir os dados atuais deste navegador. Continuar?")) return;
-      if(data.schedule) schedule = data.schedule;
+      if(data.schedules) schedules = data.schedules;
+      else if(data.schedule) schedules = {[currentUserId]: data.schedule}; // backup antigo (formato de uma pessoa só)
       if(data.notes) notes = data.notes;
       if(data.tasks) tasks = data.tasks;
       if(data.tags) TAGS = data.tags;
@@ -2709,11 +2816,12 @@ document.getElementById("importFileInput").addEventListener("change", (e)=>{
       if(data.finCategories) FIN_CATEGORIES = data.finCategories;
       if(data.currency) CURRENCY = data.currency;
       if(data.diet) dietData = data.diet;
-      save(SCHEDULE_KEY, schedule); save(NOTES_KEY, notes); save(TASKS_KEY, tasks);
+      scheduleViewUserId = currentUserId;
+      save(SCHEDULE_KEY, schedules); save(NOTES_KEY, notes); save(TASKS_KEY, tasks);
       save(TAGS_KEY, TAGS); save(CATEGORIES_KEY, CATEGORIES); save(USERS_KEY, USERS);
       save(HABITS_KEY, habits); save(CURRENT_USER_KEY, currentUserId);
       save(FIN_TX_KEY, finTx); save(FIN_CATEGORIES_KEY, FIN_CATEGORIES); save(CURRENCY_KEY, CURRENCY); save(DIET_KEY, dietData);
-      renderHead(); renderBody(); renderLegend(); renderCellSwatches();
+      renderHead(); renderBody(); renderLegend(); renderCellSwatches(); renderScheduleOwnerFilter();
       fillSubjectSelects(); renderNotes(); fillCategorySelect(); fillOwnerSelects();
       ownerFilter = currentUserId;
       renderTasks(); renderProfileSwitcher(); renderSettings();
@@ -3146,7 +3254,7 @@ function renderDieta(){
 // mapeia cada chave sincronizável pro par leitura/escrita do estado em memória
 function syncMap(){
   return [
-    {key: SCHEDULE_KEY,       get:()=>schedule,       set:v=>{ schedule = v; }},
+    {key: SCHEDULE_KEY,       get:()=>schedules,      set:v=>{ schedules = v; }},
     {key: NOTES_KEY,          get:()=>notes,          set:v=>{ notes = v; }},
     {key: TASKS_KEY,          get:()=>tasks,          set:v=>{ tasks = v; }},
     {key: TAGS_KEY,           get:()=>TAGS,           set:v=>{ TAGS = v; }},
@@ -3245,7 +3353,7 @@ function hydrateFromServer(serverData){
 }
 
 function renderEverything(){
-  renderHead(); renderBody(); renderLegend(); renderCellSwatches();
+  renderHead(); renderBody(); renderLegend(); renderCellSwatches(); renderScheduleOwnerFilter(); renderSchedDragTasks();
   fillSubjectSelects(); renderNotes();
   fillCategorySelect(); fillOwnerSelects(); renderTasks();
   fillFinCategorySelects(); renderFinanceiro();
@@ -3313,7 +3421,7 @@ function tickClock(){
 /* ======================================================================
    INIT
 ====================================================================== */
-renderHead(); renderBody(); renderLegend(); renderCellSwatches();
+renderHead(); renderBody(); renderLegend(); renderCellSwatches(); renderScheduleOwnerFilter(); renderSchedDragTasks();
 fillSubjectSelects(); renderNotes();
 fillCategorySelect(); fillOwnerSelects(); renderTasks();
 fillFinCategorySelects(); renderFinanceiro();
