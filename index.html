@@ -3255,15 +3255,24 @@ function renderEverything(){
   if(document.getElementById("config").classList.contains("active")) renderSettings();
 }
 
+function isEditingSomething(){
+  // enquanto qualquer modal ou o editor de notas está aberto, existe algo em
+  // memória que ainda não foi salvo — não é seguro trocar o estado por baixo
+  return document.querySelectorAll(".overlay.open").length > 0
+      || document.getElementById("editorView").classList.contains("open");
+}
+
 async function syncNow(){
   if(!apiUrl){ setSyncStatus("unconfigured"); return; }
   setSyncStatus("syncing");
-  const data = await pullAll();
   let pullOk = false;
-  if(data){
-    pullOk = true;
-    hydrateFromServer(data);
-    renderEverything();
+  if(!isEditingSomething()){
+    const data = await pullAll();
+    if(data){
+      pullOk = true;
+      hydrateFromServer(data);
+      renderEverything();
+    }
   }
   const pushResult = await flushSync(); // true = enviou com sucesso | false = falhou | null = nada pra enviar
   if(pullOk || pushResult === true) setSyncStatus("synced");
