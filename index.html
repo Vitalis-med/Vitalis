@@ -387,6 +387,28 @@
   .rv-mini:hover{color:var(--primary);}
   .rv-mini .rv-mini-area{font-size:9.5px; color:var(--primary); font-weight:700; text-transform:uppercase;}
 
+  /* ---- Boletim ---- */
+  .gr-card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-md); box-shadow:var(--shadow-card); padding:15px 17px; margin-bottom:12px;}
+  .gr-top{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;}
+  .gr-name{display:flex; align-items:center; gap:8px; font-family:'Fraunces',serif; font-size:15px; font-weight:600;}
+  .gr-name i{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+  .gr-status{font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:999px; font-family:'IBM Plex Mono',monospace;}
+  .gr-status.pass{background:var(--primary-soft); color:var(--primary);}
+  .gr-status.fail{background:var(--now-soft); color:var(--now);}
+  .gr-status.progress{background:var(--lunch-bg); color:var(--lunch-ink);}
+  .gr-status.pending{background:var(--card-2); color:var(--text-faint);}
+  .gr-del-subject{background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:14px;}
+  .gr-del-subject:hover{color:var(--now);}
+  table.gr-table{width:100%; border-collapse:collapse; margin-bottom:8px;}
+  table.gr-table th{text-align:left; font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-faint); font-weight:700; padding:5px 8px; border-bottom:1px solid var(--border);}
+  table.gr-table td{padding:7px 8px; font-size:12.5px; border-bottom:1px solid var(--border); color:var(--text);}
+  table.gr-table tr:last-child td{border-bottom:none;}
+  table.gr-table tr{cursor:pointer;}
+  table.gr-table tr:hover{background:var(--paper);}
+  .gr-nota-pending{color:var(--text-faint); font-style:italic;}
+  .gr-add-item{font-size:11.5px; color:var(--primary); background:none; border:none; cursor:pointer; padding:4px 0; font-weight:600;}
+  .gr-empty-items{font-size:11.5px; color:var(--text-faint); font-style:italic; padding:8px 0;}
+
   /* ---- Subtarefas ---- */
   .subtask-list{display:flex; flex-direction:column; gap:5px; margin-top:5px;}
   .subtask-row{display:flex; align-items:center; gap:8px;}
@@ -696,6 +718,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3.3v5.2c0 4.6-3 8.1-8 9.5-5-1.4-8-4.9-8-9.5V6.3Z"/><path d="M9 12l2 2 4-4.3"/></svg>
       Revalida
     </button>
+    <button class="nav-item" data-tab="boletim">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5"/><path d="M8.5 16.5l1.8 1.8L14 14.5"/></svg>
+      Boletim
+    </button>
   </nav>
 
   <div class="nav-eyebrow">Organização</div>
@@ -857,6 +883,30 @@
     </div>
     <div class="search-meta" id="revalidaMeta">59 questões carregadas (edição 2025/1) · <span id="revalidaSourceNote">fonte: INEP, questões oficiais</span></div>
     <div id="revalidaResults"></div>
+  </section>
+
+  <!-- ================= BOLETIM ================= -->
+  <section id="boletim" class="panel">
+    <header class="page-head">
+      <div>
+        <h1>Boletim</h1>
+        <p>Notas por matéria, com média ponderada e status de aprovação calculados sozinhos</p>
+      </div>
+      <div class="head-actions">
+        <button class="btn primary" id="btnAddSubjectGrade">+ Matéria</button>
+      </div>
+    </header>
+
+    <div class="task-toolbar" style="margin-bottom:14px;">
+      <div>
+        <div class="filter-group-label">Boletim de</div>
+        <div class="chip-row" id="boletimOwnerFilters"></div>
+      </div>
+    </div>
+
+    <div class="stat-row" id="boletimStats"></div>
+
+    <div id="boletimList"></div>
   </section>
 
   <!-- ================= TAREFAS ================= -->
@@ -1097,6 +1147,15 @@
         </div>
       </div>
 
+      <div class="side-card">
+        <h4>Boletim</h4>
+        <p class="hint">Nota mínima pra ser considerado aprovado (usada no cálculo automático das médias).</p>
+        <div class="crud-add-row" style="margin-top:0; padding-top:0; border-top:none;">
+          <input type="text" id="minApprovalInput" placeholder="60" inputmode="decimal" style="max-width:100px;">
+          <button class="btn sm primary" id="btnSaveMinApproval">Salvar</button>
+        </div>
+      </div>
+
       <div class="side-card" style="grid-column:1/-1;">
         <h4>Sincronização — Google Sheets</h4>
         <p class="hint">Cola aqui a URL do seu Apps Script (depois de publicar como app da web) pra você e seu colega dividirem os mesmos dados em tempo quase real.</p>
@@ -1287,6 +1346,46 @@
   </div>
 </div>
 
+<!-- ===== Modal: nova matéria (boletim) ===== -->
+<div class="overlay" id="overlayGradeSubject">
+  <div class="modal sm">
+    <h3>Nova matéria no boletim</h3>
+    <div class="meta-line">Entra na lista pra você lançar as avaliações depois</div>
+    <label>Nome da matéria</label>
+    <input type="text" id="gsName" placeholder="Ex: Fisiología Humana II">
+    <label>Cor</label>
+    <input type="color" id="gsColor" value="#2F6F63" style="width:100%; height:40px; border:1px solid var(--border-strong); border-radius:8px; cursor:pointer;">
+    <div class="modal-actions">
+      <div></div>
+      <div class="right">
+        <button class="btn" id="gsCancel">Cancelar</button>
+        <button class="btn primary" id="gsCreate">Adicionar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: nova avaliação (boletim) ===== -->
+<div class="overlay" id="overlayGradeItem">
+  <div class="modal sm">
+    <h3 id="giTitle">Nova avaliação</h3>
+    <div class="meta-line" id="giMeta">—</div>
+    <label>Nome (ex: P1, P2, Trabalho 1)</label>
+    <input type="text" id="giName" placeholder="P1">
+    <div class="field-row">
+      <div><label>Peso (%)</label><input type="text" id="giPeso" placeholder="50" inputmode="decimal"></div>
+      <div><label>Nota (deixa vazio se ainda não saiu)</label><input type="text" id="giNota" placeholder="0-100" inputmode="decimal"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="giDelete" style="display:none;">Excluir</button>
+      <div class="right">
+        <button class="btn" id="giCancel">Cancelar</button>
+        <button class="btn primary" id="giSave">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== Modal: novo perfil ===== -->
 <div class="overlay" id="overlayUser">
   <div class="modal sm">
@@ -1372,6 +1471,8 @@ const PRIORITIES = { alta:{label:"Alta", hex:"#C0483C"}, media:{label:"Média", 
 const HABITS_DEFAULT = ["Água", "Sono 7h+", "Exercício", "Revisão do dia"];
 const SRS_INTERVALS = [1,3,7,14,30,90];
 const SRS_LOG_KEY = "painel_estudos_srs_log_v1";
+const GRADES_KEY = "vitalis_boletim_v1";
+const MIN_APPROVAL_KEY = "vitalis_nota_minima_v1";
 const API_URL_KEY = "vitalis_api_url_v1";
 const HABIT_DAY_LABELS = ["S","T","Q","Q","S","S","D"];
 const OUTRO_TAG = {id:"outro", name:"Outro / livre", hex:"#8A94A0"};
@@ -1520,6 +1621,24 @@ function getSchedule(uid){
   return schedules[uid];
 }
 let scheduleViewUserId = currentUserId;
+
+// boletim de notas — também por pessoa, semeado com as matérias reais do semestre
+const ACADEMIC_SUBJECT_NAMES = ["Fisiología Humana I","Psicología médica","Epidemiología","Metodología de la Investigación I","Guaraní Médico","Bioestadística","Inmunología","Genética","Módulo Integrador Sutura"];
+let boletim = load(GRADES_KEY, {});
+let minApproval = load(MIN_APPROVAL_KEY, 60);
+let boletimViewUserId = currentUserId;
+function ensureBoletim(uid){
+  if(!boletim[uid]){
+    boletim[uid] = ACADEMIC_SUBJECT_NAMES.map(name=>{
+      const t = tagByName(name);
+      return {id:uid2(), name, color: t ? t.hex : "#8A94A0", items:[]};
+    });
+    save(GRADES_KEY, boletim);
+  }
+  return boletim[uid];
+}
+function uid2(){ return uid(); } // apelido pra evitar sombra de parâmetro "uid" nas funções acima
+
 let notes = load(NOTES_KEY, []);
 let tasks = load(TASKS_KEY, null);
 let habits = load(HABITS_KEY, null);
@@ -1589,6 +1708,7 @@ document.querySelectorAll(".nav-item").forEach(btn=>{
     if(btn.dataset.tab === "busca") renderSearch();
     if(btn.dataset.tab === "tarefas") renderTasks();
     if(btn.dataset.tab === "revisao") renderRevisao();
+    if(btn.dataset.tab === "boletim"){ renderBoletimOwnerFilter(); renderBoletim(); }
     if(btn.dataset.tab === "financeiro") renderFinanceiro();
     if(btn.dataset.tab === "dieta") renderDieta();
     if(btn.dataset.tab === "config") renderSettings();
@@ -2203,6 +2323,178 @@ function renderRvSuggestions(){
 });
 
 /* ======================================================================
+   BOLETIM — notas por matéria, média ponderada, aprovação
+====================================================================== */
+function subjectAverage(subject){
+  const graded = subject.items.filter(i=> i.nota !== null && i.nota !== "" && i.nota !== undefined);
+  if(graded.length===0) return null;
+  const totalPeso = graded.reduce((s,i)=>s+(Number(i.peso)||0),0);
+  if(totalPeso<=0) return null;
+  const weighted = graded.reduce((s,i)=>s+(Number(i.peso)||0)*(Number(i.nota)||0),0);
+  return weighted/totalPeso;
+}
+function subjectStatus(subject){
+  if(subject.items.length===0) return {label:"Sem avaliações", cls:"pending"};
+  const totalPeso = subject.items.reduce((s,i)=>s+(Number(i.peso)||0),0);
+  const gradedPeso = subject.items.filter(i=>i.nota!==null&&i.nota!=="" && i.nota!==undefined).reduce((s,i)=>s+(Number(i.peso)||0),0);
+  const avg = subjectAverage(subject);
+  if(avg===null) return {label:"Sem notas ainda", cls:"pending"};
+  if(gradedPeso < totalPeso - 0.01) return {label:"Em andamento · "+avg.toFixed(1), cls:"progress"};
+  return avg >= minApproval ? {label:"Aprovado · "+avg.toFixed(1), cls:"pass"} : {label:"Reprovado · "+avg.toFixed(1), cls:"fail"};
+}
+function renderBoletimOwnerFilter(){
+  const wrap = document.getElementById("boletimOwnerFilters");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  USERS.forEach(u=>{
+    const chip = document.createElement("button");
+    chip.className = "cat-chip" + (boletimViewUserId===u.id ? " active" : "");
+    chip.textContent = u.id===currentUserId ? u.name+" (eu)" : u.name;
+    chip.addEventListener("click", ()=>{ boletimViewUserId = u.id; renderBoletimOwnerFilter(); renderBoletim(); });
+    wrap.appendChild(chip);
+  });
+}
+function renderBoletimStats(){
+  const wrap = document.getElementById("boletimStats");
+  if(!wrap) return;
+  const subjects = ensureBoletim(boletimViewUserId);
+  let aprovadas=0, risco=0, semNota=0, somaMedias=0, countMedias=0;
+  subjects.forEach(s=>{
+    const st = subjectStatus(s);
+    if(st.cls==="pass") aprovadas++;
+    else if(st.cls==="fail" || st.cls==="progress"){ const avg=subjectAverage(s); if(avg!==null && avg<minApproval) risco++; }
+    else semNota++;
+    const avg = subjectAverage(s);
+    if(avg!==null){ somaMedias+=avg; countMedias++; }
+  });
+  const mediaGeral = countMedias ? (somaMedias/countMedias).toFixed(1) : "—";
+  wrap.innerHTML = `
+    <div class="stat-card"><div class="stat-num">${subjects.length}</div><div class="stat-label">Matérias</div></div>
+    <div class="stat-card"><div class="stat-num">${aprovadas}</div><div class="stat-label">Aprovadas</div></div>
+    <div class="stat-card warn"><div class="stat-num">${risco}</div><div class="stat-label">Abaixo da média</div></div>
+    <div class="stat-card"><div class="stat-num">${mediaGeral}</div><div class="stat-label">Média geral (mín. ${minApproval})</div></div>
+  `;
+}
+function renderBoletim(){
+  renderBoletimStats();
+  const wrap = document.getElementById("boletimList");
+  if(!wrap) return;
+  const subjects = ensureBoletim(boletimViewUserId);
+  if(subjects.length===0){
+    wrap.innerHTML = '<div class="empty-state"><h3>Nenhuma matéria no boletim</h3><p>Clica em "+ Matéria" pra começar a lançar notas.</p></div>';
+    return;
+  }
+  wrap.innerHTML = "";
+  subjects.forEach(subject=>{
+    const st = subjectStatus(subject);
+    const card = document.createElement("div");
+    card.className = "gr-card";
+    const rows = subject.items.map(item=>{
+      const notaTxt = (item.nota===null||item.nota===""||item.nota===undefined) ? '<span class="gr-nota-pending">pendente</span>' : Number(item.nota).toString();
+      return `<tr data-item="${item.id}"><td>${escapeHtml(item.name)}</td><td>${item.peso}%</td><td>${notaTxt}</td></tr>`;
+    }).join("");
+    card.innerHTML = `
+      <div class="gr-top">
+        <div class="gr-name"><i style="background:${subject.color}"></i>${escapeHtml(subject.name)}</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="gr-status ${st.cls}">${st.label}</span>
+          <button class="gr-del-subject" title="Remover matéria">×</button>
+        </div>
+      </div>
+      ${subject.items.length ? '<table class="gr-table"><thead><tr><th>Avaliação</th><th>Peso</th><th>Nota</th></tr></thead><tbody>'+rows+'</tbody></table>' : '<div class="gr-empty-items">Nenhuma avaliação lançada ainda.</div>'}
+      <button class="gr-add-item">+ Adicionar avaliação</button>
+    `;
+    card.querySelector(".gr-del-subject").addEventListener("click", ()=>{
+      if(!confirm('Remover "'+subject.name+'" do boletim? Isso apaga as notas lançadas nela.')) return;
+      boletim[boletimViewUserId] = subjects.filter(s=>s.id!==subject.id);
+      save(GRADES_KEY, boletim);
+      renderBoletim();
+    });
+    card.querySelector(".gr-add-item").addEventListener("click", ()=> openGradeItemModal(subject.id, null));
+    card.querySelectorAll("table.gr-table tr[data-item]").forEach(tr=>{
+      tr.addEventListener("click", ()=> openGradeItemModal(subject.id, tr.dataset.item));
+    });
+    wrap.appendChild(card);
+  });
+}
+
+/* ---- modal nova matéria ---- */
+document.getElementById("btnAddSubjectGrade").addEventListener("click", ()=>{
+  document.getElementById("gsName").value = "";
+  document.getElementById("gsColor").value = "#2F6F63";
+  document.getElementById("overlayGradeSubject").classList.add("open");
+  document.getElementById("gsName").focus();
+});
+document.getElementById("gsCancel").addEventListener("click", ()=> document.getElementById("overlayGradeSubject").classList.remove("open"));
+document.getElementById("overlayGradeSubject").addEventListener("click", e=>{ if(e.target.id==="overlayGradeSubject") e.currentTarget.classList.remove("open"); });
+document.getElementById("gsCreate").addEventListener("click", ()=>{
+  const name = document.getElementById("gsName").value.trim();
+  if(!name) return;
+  const subjects = ensureBoletim(boletimViewUserId);
+  subjects.push({id:uid(), name, color:document.getElementById("gsColor").value, items:[]});
+  save(GRADES_KEY, boletim);
+  document.getElementById("overlayGradeSubject").classList.remove("open");
+  renderBoletim();
+  toast("Matéria adicionada ao boletim");
+});
+
+/* ---- modal nova/editar avaliação ---- */
+let giSubjectId = null, giItemId = null;
+function openGradeItemModal(subjectId, itemId){
+  giSubjectId = subjectId; giItemId = itemId;
+  const subjects = ensureBoletim(boletimViewUserId);
+  const subject = subjects.find(s=>s.id===subjectId);
+  document.getElementById("giMeta").textContent = subject.name;
+  if(itemId){
+    const item = subject.items.find(i=>i.id===itemId);
+    document.getElementById("giTitle").textContent = "Editar avaliação";
+    document.getElementById("giName").value = item.name;
+    document.getElementById("giPeso").value = item.peso;
+    document.getElementById("giNota").value = (item.nota===null||item.nota===undefined) ? "" : item.nota;
+    document.getElementById("giDelete").style.display = "inline-flex";
+  }else{
+    document.getElementById("giTitle").textContent = "Nova avaliação";
+    document.getElementById("giName").value = "";
+    document.getElementById("giPeso").value = "";
+    document.getElementById("giNota").value = "";
+    document.getElementById("giDelete").style.display = "none";
+  }
+  document.getElementById("overlayGradeItem").classList.add("open");
+  document.getElementById("giName").focus();
+}
+function closeGradeItemModal(){ document.getElementById("overlayGradeItem").classList.remove("open"); giSubjectId=null; giItemId=null; }
+document.getElementById("giCancel").addEventListener("click", closeGradeItemModal);
+document.getElementById("overlayGradeItem").addEventListener("click", e=>{ if(e.target.id==="overlayGradeItem") closeGradeItemModal(); });
+document.getElementById("giDelete").addEventListener("click", ()=>{
+  const subjects = ensureBoletim(boletimViewUserId);
+  const subject = subjects.find(s=>s.id===giSubjectId);
+  subject.items = subject.items.filter(i=>i.id!==giItemId);
+  save(GRADES_KEY, boletim);
+  closeGradeItemModal();
+  renderBoletim();
+  toast("Avaliação excluída");
+});
+document.getElementById("giSave").addEventListener("click", ()=>{
+  const name = document.getElementById("giName").value.trim();
+  if(!name){ toast("Dá um nome pra avaliação (ex: P1)"); return; }
+  const pesoRaw = document.getElementById("giPeso").value.replace(",",".").trim();
+  const notaRaw = document.getElementById("giNota").value.replace(",",".").trim();
+  const peso = pesoRaw==="" ? 0 : Math.max(0, Math.min(100, Number(pesoRaw)||0));
+  const nota = notaRaw==="" ? null : Math.max(0, Math.min(100, Number(notaRaw)||0));
+  const subjects = ensureBoletim(boletimViewUserId);
+  const subject = subjects.find(s=>s.id===giSubjectId);
+  if(giItemId){
+    const item = subject.items.find(i=>i.id===giItemId);
+    Object.assign(item, {name, peso, nota});
+  }else{
+    subject.items.push({id:uid(), name, peso, nota});
+  }
+  save(GRADES_KEY, boletim);
+  closeGradeItemModal();
+  renderBoletim();
+});
+
+/* ======================================================================
    REVISÃO ESPAÇADA
 ====================================================================== */
 function renderRevisao(){
@@ -2701,10 +2993,12 @@ function renderProfileSwitcher(){
       save(CURRENT_USER_KEY, currentUserId);
       ownerFilter = currentUserId;
       scheduleViewUserId = currentUserId;
+      boletimViewUserId = currentUserId;
       renderProfileSwitcher();
       renderTasks();
       renderSettings();
       if(document.getElementById("cronograma").classList.contains("active")){ renderBody(); renderScheduleOwnerFilter(); renderSchedDragTasks(); }
+      if(document.getElementById("boletim").classList.contains("active")){ renderBoletimOwnerFilter(); renderBoletim(); }
       if(document.getElementById("financeiro").classList.contains("active")) renderFinanceiro();
       if(document.getElementById("dieta").classList.contains("active")) renderDieta();
       toast("Perfil: "+u.name);
@@ -3414,7 +3708,9 @@ function syncMap(){
     {key: FIN_TX_KEY,         get:()=>finTx,          set:v=>{ finTx = v; }},
     {key: FIN_CATEGORIES_KEY, get:()=>FIN_CATEGORIES, set:v=>{ FIN_CATEGORIES = v; }},
     {key: CURRENCY_KEY,       get:()=>CURRENCY,       set:v=>{ CURRENCY = v; }},
-    {key: DIET_KEY,           get:()=>dietData,       set:v=>{ dietData = v; }}
+    {key: DIET_KEY,           get:()=>dietData,       set:v=>{ dietData = v; }},
+    {key: GRADES_KEY,         get:()=>boletim,        set:v=>{ boletim = v; }},
+    {key: MIN_APPROVAL_KEY,   get:()=>minApproval,    set:v=>{ minApproval = v; }}
   ];
 }
 // CURRENT_USER_KEY e SRS_LOG_KEY ficam de fora de propósito: são preferências
@@ -3510,6 +3806,7 @@ function renderEverything(){
   renderDieta();
   renderProfileSwitcher();
   if(document.getElementById("revisao").classList.contains("active")) renderRevisao();
+  if(document.getElementById("boletim").classList.contains("active")){ renderBoletimOwnerFilter(); renderBoletim(); }
   if(document.getElementById("config").classList.contains("active")) renderSettings();
 }
 
@@ -3556,6 +3853,14 @@ document.getElementById("btnSaveApiUrl").addEventListener("click", ()=>{
 document.getElementById("btnSyncNow").addEventListener("click", ()=>{
   if(!apiUrl){ toast("Cola a URL da API primeiro"); return; }
   syncNow();
+});
+document.getElementById("minApprovalInput").value = minApproval;
+document.getElementById("btnSaveMinApproval").addEventListener("click", ()=>{
+  const v = Number(document.getElementById("minApprovalInput").value.replace(",",".")) || 60;
+  minApproval = v;
+  save(MIN_APPROVAL_KEY, minApproval);
+  toast("Nota mínima atualizada");
+  if(document.getElementById("boletim").classList.contains("active")) renderBoletim();
 });
 
 /* ======================================================================
