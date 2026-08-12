@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vitalis — Medicina UNDP</title>
 <link rel="icon" type="image/png" href="vitalis-logo.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="vitalis-icon-192.png">
+<meta name="theme-color" content="#0B0F14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vitalis">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap" rel="stylesheet">
 <style>
@@ -381,13 +388,20 @@
   .rv-num{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--text-faint);}
   .rv-enun{font-size:13px; line-height:1.6; color:var(--text); margin-bottom:10px;}
   .rv-alts{display:flex; flex-direction:column; gap:5px; margin-bottom:10px;}
-  .rv-alt{display:flex; gap:8px; font-size:12.5px; padding:6px 9px; border-radius:var(--radius-sm); border:1px solid var(--border); cursor:pointer;}
-  .rv-alt:hover{border-color:var(--border-strong);}
+  .rv-alt{display:flex; gap:8px; font-size:12.5px; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border); cursor:pointer; width:100%; text-align:left; background:var(--card); font-family:'Inter',sans-serif; color:var(--text);}
+  .rv-alt:hover:not(:disabled){border-color:var(--primary); background:var(--card-2);}
+  .rv-alt:disabled{cursor:default;}
   .rv-alt b{flex-shrink:0; color:var(--text-faint);}
   .rv-alt.correct{border-color:var(--primary); background:var(--primary-soft);}
   .rv-alt.correct b{color:var(--primary);}
-  .rv-gab-btn{font-size:11px; color:var(--text-soft); background:none; border:none; cursor:pointer; text-decoration:underline; padding:0;}
+  .rv-alt.wrong{border-color:var(--now); background:var(--now-soft);}
+  .rv-alt.wrong b{color:var(--now);}
+  .rv-feedback{font-size:12px; font-weight:600; padding:8px 10px; border-radius:var(--radius-sm);}
+  .rv-feedback.ok{color:var(--primary); background:var(--primary-soft);}
+  .rv-feedback.bad{color:var(--now); background:var(--now-soft);}
   .rv-tema{font-size:11px; color:var(--text-faint); font-style:italic;}
+  .rv-stats-bar{display:flex; gap:18px; font-size:11.5px; color:var(--text-soft); margin:2px 0 14px; font-family:'IBM Plex Mono',monospace;}
+  .rv-stats-bar b{color:var(--primary); font-weight:700;}
   .rv-note-box{background:var(--paper); border:1px solid var(--border); border-radius:var(--radius-md); padding:13px 14px; margin-top:12px;}
   .rv-note-box h4{font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); margin:0 0 9px; font-weight:700; font-family:'IBM Plex Mono',monospace;}
   .rv-mini{border-left:2px solid var(--primary); padding-left:10px; margin-bottom:8px; font-size:12px; cursor:pointer;}
@@ -415,6 +429,46 @@
   .gr-nota-pending{color:var(--text-faint); font-style:italic;}
   .gr-add-item{font-size:11.5px; color:var(--primary); background:none; border:none; cursor:pointer; padding:4px 0; font-weight:600;}
   .gr-empty-items{font-size:11.5px; color:var(--text-faint); font-style:italic; padding:8px 0;}
+
+  /* ---- Hoje (página inicial) ---- */
+  .hoje-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; grid-auto-rows:min-content;}
+  .hoje-card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; box-shadow:var(--shadow-card); position:relative;}
+  .hoje-card::before{content:""; position:absolute; top:-1px; left:20px; width:28px; height:3px; background:var(--primary); border-radius:0 0 3px 3px; box-shadow:0 0 6px rgba(45,212,191,.6);}
+  .hoje-card h4{font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); font-weight:700; margin:0 0 12px; font-family:'IBM Plex Mono',monospace;}
+  .hoje-card-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
+  .hoje-card-head h4{margin:0;}
+  .hoje-count{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-faint); background:var(--card-2); border-radius:999px; padding:1px 9px;}
+  .hoje-now{grid-column:span 1; grid-row:span 2;}
+  .hoje-divider{height:1px; background:var(--border); margin:16px 0;}
+  .hoje-now-block{display:flex; align-items:center; gap:12px;}
+  .hoje-now-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0; box-shadow:0 0 10px currentColor;}
+  .hoje-now-info .n-label{font-family:'Fraunces',serif; font-size:16px; font-weight:600; color:#F0F2F4; line-height:1.3;}
+  .hoje-now-info .n-time{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-soft); margin-top:2px;}
+  .hoje-empty-slot{font-size:12.5px; color:var(--text-faint); font-style:italic;}
+  .hoje-task-row{display:flex; align-items:center; gap:9px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px;}
+  .hoje-task-row:last-child{border-bottom:none;}
+  .hoje-task-row .htk{width:15px; height:15px; border-radius:4px; border:1.5px solid var(--border-strong); flex-shrink:0; cursor:pointer; background:var(--card); position:relative;}
+  .hoje-task-row .htk.done{background:var(--primary); border-color:var(--primary);}
+  .hoje-task-row .htk.done::after{content:""; position:absolute; left:4px; top:1px; width:4px; height:8px; border:solid #04211B; border-width:0 2px 2px 0; transform:rotate(40deg);}
+  .hoje-task-row .htxt{flex:1; color:var(--text);}
+  .hoje-task-row.done .htxt{text-decoration:line-through; color:var(--text-faint);}
+  .hoje-task-row .hdue{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-faint);}
+  .hoje-task-row .hdue.overdue{color:var(--now); font-weight:700;}
+  .hoje-habit-row{display:flex; align-items:center; justify-content:space-between; padding:6px 0; font-size:12.5px;}
+  .hoje-habit-row .hname{color:var(--text);}
+  .hoje-habit-row .htoggle{width:22px; height:22px; border-radius:6px; border:1.5px solid var(--border-strong); background:var(--card); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; color:transparent;}
+  .hoje-habit-row .htoggle.on{background:var(--primary); border-color:var(--primary); color:#04211B;}
+  .hoje-prova-row{display:flex; align-items:center; gap:9px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12px;}
+  .hoje-prova-row:last-child{border-bottom:none;}
+  .hoje-prova-row .hp-dot{width:6px; height:6px; border-radius:50%; flex-shrink:0;}
+  .hoje-prova-row .hp-text{flex:1; color:var(--text);}
+  .hoje-prova-row .hp-date{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--primary);}
+  .hoje-mini-stats{display:flex; justify-content:space-around; align-items:center; text-align:center;}
+  .hoje-mini-stat .hoje-mini-num{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:#F0F2F4;}
+  .hoje-mini-stat .hoje-mini-label{font-size:9.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.04em; margin-top:4px;}
+  .hoje-empty-mini{font-size:11.5px; color:var(--text-faint); font-style:italic; padding:4px 0;}
+  @media (max-width:1100px){ .hoje-grid{grid-template-columns:repeat(2,1fr);} .hoje-now{grid-column:span 2;} }
+  @media (max-width:700px){ .hoje-grid{grid-template-columns:1fr;} .hoje-now{grid-column:span 1;} }
 
   /* ---- Subtarefas ---- */
   .subtask-list{display:flex; flex-direction:column; gap:5px; margin-top:5px;}
@@ -703,9 +757,16 @@
     </div>
   </div>
 
+  <nav class="side-nav" style="margin-bottom:14px;">
+    <button class="nav-item active" data-tab="hoje">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l2.5-2.5M3 12l9-9 9 9M5.5 9.5V20a1 1 0 0 0 1 1h4v-6h3v6h4a1 1 0 0 0 1-1V9.5"/></svg>
+      Hoje
+    </button>
+  </nav>
+
   <div class="nav-eyebrow">Estudos</div>
   <nav class="side-nav">
-    <button class="nav-item active" data-tab="cronograma">
+    <button class="nav-item" data-tab="cronograma">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/><circle cx="15.5" cy="15" r="1.2" fill="currentColor" stroke="none"/></svg>
       Cronograma
     </button>
@@ -782,8 +843,54 @@
 
 <main class="content">
 
+  <!-- ================= HOJE ================= -->
+  <section id="hoje" class="panel active">
+    <header class="page-head">
+      <div>
+        <h1 id="hojeGreeting">Bom dia, Paulo</h1>
+        <p id="hojeDateLine">—</p>
+      </div>
+    </header>
+
+    <div class="hoje-grid">
+      <div class="hoje-card hoje-now">
+        <h4>Agora</h4>
+        <div id="hojeNowBlock"></div>
+        <div class="hoje-divider"></div>
+        <h4>A seguir</h4>
+        <div id="hojeNextBlock"></div>
+      </div>
+
+      <div class="hoje-card">
+        <div class="hoje-card-head"><h4>Tarefas de hoje</h4><span class="hoje-count" id="hojeTaskCount">0</span></div>
+        <div id="hojeTaskList"></div>
+      </div>
+
+      <div class="hoje-card">
+        <div class="hoje-card-head"><h4>Hábitos de hoje</h4></div>
+        <div id="hojeHabitList"></div>
+      </div>
+
+      <div class="hoje-card">
+        <div class="hoje-card-head"><h4>Revisão espaçada</h4></div>
+        <div id="hojeRevisao"></div>
+      </div>
+
+      <div class="hoje-card">
+        <div class="hoje-card-head"><h4>Próximas provas</h4></div>
+        <div id="hojeProvas"></div>
+      </div>
+
+      <div class="hoje-card hoje-mini-stats">
+        <div class="hoje-mini-stat"><div class="hoje-mini-num" id="hojeFinSaldo">—</div><div class="hoje-mini-label">Saldo do mês</div></div>
+        <div class="hoje-mini-stat"><div class="hoje-mini-num" id="hojeAgua">0/8</div><div class="hoje-mini-label">Água hoje</div></div>
+        <div class="hoje-mini-stat"><div class="hoje-mini-num" id="hojeStreak">0</div><div class="hoje-mini-label">Dias seguidos</div></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ================= CRONOGRAMA ================= -->
-  <section id="cronograma" class="panel active">
+  <section id="cronograma" class="panel">
     <header class="page-head">
       <div>
         <h1>Cronograma semanal</h1>
@@ -889,6 +996,7 @@
       <input type="text" id="revalidaSearch" placeholder="Ex: pâncreas, hormônios, sífilis, dengue, DPOC…">
     </div>
     <div class="search-meta" id="revalidaMeta">59 questões carregadas (edição 2025/1) · <span id="revalidaSourceNote">fonte: INEP, questões oficiais</span></div>
+    <div class="rv-stats-bar" id="revalidaStatsBar"></div>
     <div id="revalidaResults"></div>
   </section>
 
@@ -1383,6 +1491,8 @@
       <div><label>Peso (%)</label><input type="text" id="giPeso" placeholder="50" inputmode="decimal"></div>
       <div><label>Nota (deixa vazio se ainda não saiu)</label><input type="text" id="giNota" placeholder="0-100" inputmode="decimal"></div>
     </div>
+    <label>Data da prova (opcional — cria uma tarefa com prazo automaticamente)</label>
+    <input type="date" id="giData">
     <div class="modal-actions">
       <button class="btn ghost" id="giDelete" style="display:none;">Excluir</button>
       <div class="right">
@@ -1479,6 +1589,7 @@ const HABITS_DEFAULT = ["Água", "Sono 7h+", "Exercício", "Revisão do dia"];
 const SRS_INTERVALS = [1,3,7,14,30,90];
 const SRS_LOG_KEY = "painel_estudos_srs_log_v1";
 const GRADES_KEY = "vitalis_boletim_v1";
+const RV_STATS_KEY = "vitalis_revalida_stats_v1";
 const MIN_APPROVAL_KEY = "vitalis_nota_minima_v1";
 const API_URL_KEY = "vitalis_api_url_v1";
 const HABIT_DAY_LABELS = ["S","T","Q","Q","S","S","D"];
@@ -1736,6 +1847,8 @@ document.querySelectorAll(".nav-item").forEach(btn=>{
     document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
     btn.classList.add("active");
     document.getElementById(btn.dataset.tab).classList.add("active");
+    if(btn.dataset.tab === "hoje") renderHoje();
+    if(btn.dataset.tab === "revalida") renderRvStatsBar();
     if(btn.dataset.tab === "cronograma"){ renderHead(); renderBody(); renderScheduleOwnerFilter(); renderSchedDragTasks(); }
     if(btn.dataset.tab === "notas") renderNotes();
     if(btn.dataset.tab === "busca") renderSearch();
@@ -2321,35 +2434,58 @@ function rvSearch(query){
     return hay.includes(q);
   });
 }
-function rvAltsHtml(rv, showGab){
+let rvStats = load(RV_STATS_KEY, {});
+function rvUserStats(uidP){ if(!rvStats[uidP]) rvStats[uidP]={}; return rvStats[uidP]; }
+function rvAltsHtml(rv, state){
   return Object.entries(rv.alts).map(([letra,txt])=>{
-    const isCorrect = showGab && letra===rv.gabarito;
-    return '<div class="rv-alt'+(isCorrect?' correct':'')+'"><b>'+letra+')</b><span>'+escapeHtml(txt)+'</span></div>';
+    let cls="";
+    if(state){ if(letra===rv.gabarito) cls=" correct"; else if(letra===state.letter) cls=" wrong"; }
+    return '<button type="button" class="rv-alt'+cls+'" data-letra="'+letra+'"'+(state?' disabled':'')+'><b>'+letra+')</b><span>'+escapeHtml(txt)+'</span></button>';
   }).join("");
 }
 function rvCardHtml(rv, q){
+  const state = rvUserStats(currentUserId)[rv.num] || null;
   const enun = q ? highlight(escapeHtml(rv.enunciado), q) : escapeHtml(rv.enunciado);
+  const feedback = state
+    ? '<div class="rv-feedback '+(state.correct?'ok':'bad')+'">'+(state.correct ? "✓ Você acertou" : "✗ Você marcou "+state.letter+" — a certa é "+rv.gabarito)+'</div>'
+    : '';
   return '<div class="rv-card" data-num="'+rv.num+'">'
     + '<div class="rv-top"><span class="rv-area">'+escapeHtml(rv.area)+'</span><span class="rv-num">Revalida 2025/1 · Q'+rv.num+'</span></div>'
     + '<div class="rv-tema">'+escapeHtml(rv.tema)+'</div>'
     + '<div class="rv-enun">'+enun+'</div>'
-    + '<div class="rv-alts" data-gab="hidden">'+rvAltsHtml(rv,false)+'</div>'
-    + '<button class="rv-gab-btn">Ver gabarito</button>'
+    + '<div class="rv-alts">'+rvAltsHtml(rv,state)+'</div>'
+    + feedback
     + '</div>';
 }
-function wireRvCards(container){
+function wireRvCards(container, query){
   container.querySelectorAll(".rv-card").forEach(card=>{
     const num = parseInt(card.dataset.num,10);
     const rv = REVALIDA_QUESTIONS.find(x=>x.num===num);
-    const btn = card.querySelector(".rv-gab-btn");
-    const altsDiv = card.querySelector(".rv-alts");
-    btn.addEventListener("click", ()=>{
-      const shown = altsDiv.dataset.gab === "shown";
-      altsDiv.dataset.gab = shown ? "hidden" : "shown";
-      altsDiv.innerHTML = rvAltsHtml(rv, !shown);
-      btn.textContent = shown ? "Ver gabarito" : "Ocultar gabarito";
+    card.querySelectorAll(".rv-alt").forEach(btn=>{
+      if(btn.disabled) return;
+      btn.addEventListener("click", ()=>{
+        const letra = btn.dataset.letra;
+        const stats = rvUserStats(currentUserId);
+        if(stats[rv.num]) return;
+        stats[rv.num] = {letter:letra, correct: letra===rv.gabarito};
+        save(RV_STATS_KEY, rvStats);
+        card.outerHTML = rvCardHtml(rv, query||"");
+        wireRvCards(container, query);
+        renderRvStatsBar();
+      });
     });
   });
+}
+function renderRvStatsBar(){
+  const bar = document.getElementById("revalidaStatsBar");
+  if(!bar) return;
+  const stats = rvUserStats(currentUserId);
+  const answered = Object.keys(stats).length;
+  const correct = Object.values(stats).filter(s=>s.correct).length;
+  const pct = answered ? Math.round(correct/answered*100) : 0;
+  bar.innerHTML = answered
+    ? `<span><b>${answered}</b> respondidas</span><span><b>${correct}</b> certas</span><span><b>${pct}%</b> de acerto</span>`
+    : `<span>Nenhuma questão respondida ainda — clica numa alternativa pra responder</span>`;
 }
 function renderRevalidaSearch(){
   const q = document.getElementById("revalidaSearch").value.trim();
@@ -2367,7 +2503,8 @@ function renderRevalidaSearch(){
     return;
   }
   wrap.innerHTML = matches.map(rv=>rvCardHtml(rv,q.toLowerCase())).join("");
-  wireRvCards(wrap);
+  wireRvCards(wrap, q.toLowerCase());
+  renderRvStatsBar();
 }
 document.getElementById("revalidaSearch").addEventListener("input", renderRevalidaSearch);
 
@@ -2404,7 +2541,8 @@ function renderRvSuggestions(){
         document.getElementById("revalidaSearch").value = "";
         const rv = REVALIDA_QUESTIONS.find(x=>x.num===num);
         document.getElementById("revalidaResults").innerHTML = rvCardHtml(rv,"");
-        wireRvCards(document.getElementById("revalidaResults"));
+        wireRvCards(document.getElementById("revalidaResults"), "");
+        renderRvStatsBar();
         document.getElementById("revalidaMeta").textContent = "Mostrando Q"+num+" a partir da sua anotação";
       }, 50);
     });
@@ -2484,7 +2622,8 @@ function renderBoletim(){
     card.className = "gr-card";
     const rows = subject.items.map(item=>{
       const notaTxt = (item.nota===null||item.nota===""||item.nota===undefined) ? '<span class="gr-nota-pending">pendente</span>' : Number(item.nota).toString();
-      return `<tr data-item="${item.id}"><td>${escapeHtml(item.name)}</td><td>${item.peso}%</td><td>${notaTxt}</td></tr>`;
+      const dataTxt = item.data ? new Date(item.data+"T12:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}) : '<span class="gr-nota-pending">—</span>';
+      return `<tr data-item="${item.id}"><td>${escapeHtml(item.name)}</td><td>${item.peso}%</td><td>${notaTxt}</td><td>${dataTxt}</td></tr>`;
     }).join("");
     card.innerHTML = `
       <div class="gr-top">
@@ -2494,14 +2633,16 @@ function renderBoletim(){
           <button class="gr-del-subject" title="Remover matéria">×</button>
         </div>
       </div>
-      ${subject.items.length ? '<table class="gr-table"><thead><tr><th>Avaliação</th><th>Peso</th><th>Nota</th></tr></thead><tbody>'+rows+'</tbody></table>' : '<div class="gr-empty-items">Nenhuma avaliação lançada ainda.</div>'}
+      ${subject.items.length ? '<table class="gr-table"><thead><tr><th>Avaliação</th><th>Peso</th><th>Nota</th><th>Data</th></tr></thead><tbody>'+rows+'</tbody></table>' : '<div class="gr-empty-items">Nenhuma avaliação lançada ainda.</div>'}
       <button class="gr-add-item">+ Adicionar avaliação</button>
     `;
     card.querySelector(".gr-del-subject").addEventListener("click", ()=>{
       if(!confirm('Remover "'+subject.name+'" do boletim? Isso apaga as notas lançadas nela.')) return;
+      subject.items.forEach(removeLinkedExamTask);
       boletim[boletimViewUserId] = subjects.filter(s=>s.id!==subject.id);
       save(GRADES_KEY, boletim);
       renderBoletim();
+      if(document.getElementById("tarefas").classList.contains("active")) renderTasks();
     });
     card.querySelector(".gr-add-item").addEventListener("click", ()=> openGradeItemModal(subject.id, null));
     card.querySelectorAll("table.gr-table tr[data-item]").forEach(tr=>{
@@ -2544,12 +2685,14 @@ function openGradeItemModal(subjectId, itemId){
     document.getElementById("giName").value = item.name;
     document.getElementById("giPeso").value = item.peso;
     document.getElementById("giNota").value = (item.nota===null||item.nota===undefined) ? "" : item.nota;
+    document.getElementById("giData").value = item.data || "";
     document.getElementById("giDelete").style.display = "inline-flex";
   }else{
     document.getElementById("giTitle").textContent = "Nova avaliação";
     document.getElementById("giName").value = "";
     document.getElementById("giPeso").value = "";
     document.getElementById("giNota").value = "";
+    document.getElementById("giData").value = "";
     document.getElementById("giDelete").style.display = "none";
   }
   document.getElementById("overlayGradeItem").classList.add("open");
@@ -2558,9 +2701,20 @@ function openGradeItemModal(subjectId, itemId){
 function closeGradeItemModal(){ document.getElementById("overlayGradeItem").classList.remove("open"); giSubjectId=null; giItemId=null; }
 document.getElementById("giCancel").addEventListener("click", closeGradeItemModal);
 document.getElementById("overlayGradeItem").addEventListener("click", e=>{ if(e.target.id==="overlayGradeItem") closeGradeItemModal(); });
+function removeLinkedExamTask(item){
+  if(!item.gradeTaskId) return;
+  const t = tasks.find(x=>x.id===item.gradeTaskId);
+  if(t){
+    if(t.scheduledAt) clearRange(t.owner, t.scheduledAt.day, t.scheduledAt.time, t.scheduledAt.span, t.scheduledAt.entryId);
+    tasks = tasks.filter(x=>x.id!==item.gradeTaskId);
+    save(TASKS_KEY, tasks); save(SCHEDULE_KEY, schedules);
+  }
+}
 document.getElementById("giDelete").addEventListener("click", ()=>{
   const subjects = ensureBoletim(boletimViewUserId);
   const subject = subjects.find(s=>s.id===giSubjectId);
+  const item = subject.items.find(i=>i.id===giItemId);
+  if(item) removeLinkedExamTask(item);
   subject.items = subject.items.filter(i=>i.id!==giItemId);
   save(GRADES_KEY, boletim);
   closeGradeItemModal();
@@ -2574,17 +2728,38 @@ document.getElementById("giSave").addEventListener("click", ()=>{
   const notaRaw = document.getElementById("giNota").value.replace(",",".").trim();
   const peso = pesoRaw==="" ? 0 : Math.max(0, Math.min(100, Number(pesoRaw)||0));
   const nota = notaRaw==="" ? null : Math.max(0, Math.min(100, Number(notaRaw)||0));
+  const data = document.getElementById("giData").value || null;
   const subjects = ensureBoletim(boletimViewUserId);
   const subject = subjects.find(s=>s.id===giSubjectId);
+  let item;
   if(giItemId){
-    const item = subject.items.find(i=>i.id===giItemId);
-    Object.assign(item, {name, peso, nota});
+    item = subject.items.find(i=>i.id===giItemId);
+    Object.assign(item, {name, peso, nota, data});
   }else{
-    subject.items.push({id:uid(), name, peso, nota});
+    item = {id:uid(), name, peso, nota, data, gradeTaskId:null};
+    subject.items.push(item);
+  }
+  // mantém a tarefa vinculada em dia: cria se tem data e não existe, atualiza se existe, remove se a data foi apagada
+  if(data){
+    const taskText = subject.name+" — "+item.name;
+    if(item.gradeTaskId && tasks.find(t=>t.id===item.gradeTaskId)){
+      const t = tasks.find(t=>t.id===item.gradeTaskId);
+      t.text = taskText; t.due = data;
+      save(TASKS_KEY, tasks);
+    }else{
+      const newTask = {id:uid(), text:taskText, category:"Faculdade", owner:boletimViewUserId, priority:"alta", due:data, recurrence:null, subtasks:[], scheduledAt:null, status:"todo", doneAt:null};
+      tasks.push(newTask);
+      item.gradeTaskId = newTask.id;
+      save(TASKS_KEY, tasks);
+    }
+  }else if(item.gradeTaskId){
+    removeLinkedExamTask(item);
+    item.gradeTaskId = null;
   }
   save(GRADES_KEY, boletim);
   closeGradeItemModal();
   renderBoletim();
+  if(document.getElementById("tarefas").classList.contains("active")) renderTasks();
 });
 
 /* ======================================================================
@@ -3803,7 +3978,8 @@ function syncMap(){
     {key: CURRENCY_KEY,       get:()=>CURRENCY,       set:v=>{ CURRENCY = v; }},
     {key: DIET_KEY,           get:()=>dietData,       set:v=>{ dietData = v; }},
     {key: GRADES_KEY,         get:()=>boletim,        set:v=>{ boletim = v; }},
-    {key: MIN_APPROVAL_KEY,   get:()=>minApproval,    set:v=>{ minApproval = v; }}
+    {key: MIN_APPROVAL_KEY,   get:()=>minApproval,    set:v=>{ minApproval = v; }},
+    {key: RV_STATS_KEY,       get:()=>rvStats,        set:v=>{ rvStats = v; }}
   ];
 }
 // CURRENT_USER_KEY e SRS_LOG_KEY ficam de fora de propósito: são preferências
@@ -3891,6 +4067,148 @@ function hydrateFromServer(serverData){
   }
 }
 
+/* ======================================================================
+   HOJE — página inicial
+====================================================================== */
+const WEEKDAYS_FULL_LOWER = ["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
+function hojeGreetingWord(){
+  const h = new Date().getHours();
+  if(h < 12) return "Bom dia";
+  if(h < 18) return "Boa tarde";
+  return "Boa noite";
+}
+function renderHoje(){
+  const me = userById(currentUserId);
+  const firstName = (me?.name||"").split(" ")[0] || "";
+  document.getElementById("hojeGreeting").textContent = hojeGreetingWord()+", "+firstName;
+  const now = new Date();
+  document.getElementById("hojeDateLine").textContent = WEEKDAYS_FULL_LOWER[now.getDay()].replace(/^./,c=>c.toUpperCase())+" · "+now.toLocaleDateString("pt-BR");
+
+  // Agora / A seguir (cronograma do próprio usuário)
+  const schedule = getSchedule(currentUserId);
+  const ti = todayIndex();
+  const nowMinutes = now.getHours()*60+now.getMinutes();
+  let nowEntry=null, nowEnd=null, nextEntry=null, nextStart=null;
+  if(ti>=0){
+    for(let m=0; m<24*60; m+=15){
+      const t = minutesToTime(m);
+      const entries = schedule[ti+"-"+t] || [];
+      const entry = entries[0];
+      if(!entry) continue;
+      if(m<=nowMinutes && m+15>nowMinutes){ nowEntry = entry; nowEnd = m+15; }
+      if(m>nowMinutes && !nextEntry){ nextEntry = entry; nextStart = m; }
+    }
+    // estende o fim do bloco atual enquanto os quartos seguintes forem o mesmo compromisso
+    if(nowEntry){
+      let m = nowEnd;
+      while(m<24*60){
+        const t = minutesToTime(m);
+        const e = (schedule[ti+"-"+t]||[])[0];
+        if(!e || e.label!==nowEntry.label) break;
+        nowEnd = m+15; m+=15;
+      }
+    }
+  }
+  document.getElementById("hojeNowBlock").innerHTML = nowEntry
+    ? `<div class="hoje-now-block"><div class="hoje-now-dot" style="background:${nowEntry.color}; color:${nowEntry.color};"></div><div class="hoje-now-info"><div class="n-label">${escapeHtml(nowEntry.label)}</div><div class="n-time">até ${minutesToTime(nowEnd)}</div></div></div>`
+    : '<div class="hoje-empty-slot">Nada agendado agora</div>';
+  document.getElementById("hojeNextBlock").innerHTML = nextEntry
+    ? `<div class="hoje-now-block"><div class="hoje-now-dot" style="background:${nextEntry.color}; color:${nextEntry.color};"></div><div class="hoje-now-info"><div class="n-label">${escapeHtml(nextEntry.label)}</div><div class="n-time">às ${minutesToTime(nextStart)}</div></div></div>`
+    : '<div class="hoje-empty-slot">Nada mais hoje</div>';
+
+  // Tarefas de hoje (vencendo hoje ou atrasadas, não concluídas) do usuário atual
+  const today = todayISO();
+  const myTasks = tasks.filter(t=> t.owner===currentUserId && t.status!=="done" && t.due && t.due<=today);
+  document.getElementById("hojeTaskCount").textContent = myTasks.length;
+  const taskWrap = document.getElementById("hojeTaskList");
+  if(myTasks.length===0){
+    taskWrap.innerHTML = '<div class="hoje-empty-mini">Nenhuma tarefa vencendo hoje 🎉</div>';
+  }else{
+    taskWrap.innerHTML = "";
+    myTasks.sort((a,b)=>(a.due||"").localeCompare(b.due||"")).slice(0,6).forEach(t=>{
+      const row = document.createElement("div");
+      row.className = "hoje-task-row";
+      const overdue = t.due < today;
+      row.innerHTML = `<div class="htk"></div><span class="htxt">${escapeHtml(t.text)}</span><span class="hdue${overdue?' overdue':''}">${overdue?'atrasada':'hoje'}</span>`;
+      row.querySelector(".htk").addEventListener("click", (e)=>{
+        e.stopPropagation();
+        t.status = "done"; t.doneAt = new Date().toISOString();
+        save(TASKS_KEY, tasks);
+        renderHoje();
+        toast("Tarefa concluída");
+      });
+      row.addEventListener("click", ()=>{ document.querySelector('.nav-item[data-tab="tarefas"]').click(); setTimeout(()=>openTaskModal(t.id), 60); });
+      taskWrap.appendChild(row);
+    });
+  }
+
+  // Hábitos de hoje
+  const habitWrap = document.getElementById("hojeHabitList");
+  const myHabits = getUserHabits(currentUserId);
+  if(myHabits.length===0){
+    habitWrap.innerHTML = '<div class="hoje-empty-mini">Nenhum hábito cadastrado</div>';
+  }else{
+    habitWrap.innerHTML = "";
+    myHabits.forEach(h=>{
+      const row = document.createElement("div");
+      row.className = "hoje-habit-row";
+      row.innerHTML = `<span class="hname">${escapeHtml(h.name)}</span><button class="htoggle${h.days[today]?' on':''}">✓</button>`;
+      row.querySelector(".htoggle").addEventListener("click", ()=>{
+        h.days[today] = !h.days[today]; save(HABITS_KEY, habits); renderHoje();
+      });
+      habitWrap.appendChild(row);
+    });
+  }
+
+  // Revisão espaçada
+  const activeNotes = notes.filter(n=>n.srs && n.srs.enabled);
+  const dueNotes = activeNotes.filter(n=>n.srs.next <= today);
+  document.getElementById("hojeRevisao").innerHTML = `
+    <div class="hoje-mini-stats" style="padding:0;">
+      <div class="hoje-mini-stat"><div class="hoje-mini-num">${dueNotes.length}</div><div class="hoje-mini-label">Pra revisar</div></div>
+      <div class="hoje-mini-stat"><div class="hoje-mini-num">${computeSrsStreak()}</div><div class="hoje-mini-label">Sequência</div></div>
+    </div>
+  `;
+
+  // Próximas provas (boletim, todas as pessoas cadastradas com data futura/hoje)
+  const provasWrap = document.getElementById("hojeProvas");
+  let allExams = [];
+  USERS.forEach(u=>{
+    ensureBoletim(u.id).forEach(subj=>{
+      subj.items.forEach(item=>{
+        if(item.data && item.data>=today){
+          allExams.push({subject:subj, item, ownerName:u.id===currentUserId?"eu":u.name});
+        }
+      });
+    });
+  });
+  allExams.sort((a,b)=>a.item.data.localeCompare(b.item.data));
+  if(allExams.length===0){
+    provasWrap.innerHTML = '<div class="hoje-empty-mini">Nenhuma prova com data cadastrada — adiciona a data ao lançar a avaliação no Boletim.</div>';
+  }else{
+    provasWrap.innerHTML = "";
+    allExams.slice(0,5).forEach(({subject,item,ownerName})=>{
+      const row = document.createElement("div");
+      row.className = "hoje-prova-row";
+      const dLabel = item.data===today ? "hoje" : new Date(item.data+"T12:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
+      row.innerHTML = `<span class="hp-dot" style="background:${subject.color}"></span><span class="hp-text">${escapeHtml(subject.name)} — ${escapeHtml(item.name)} <span style="color:var(--text-faint);">(${escapeHtml(ownerName)})</span></span><span class="hp-date">${dLabel}</span>`;
+      row.addEventListener("click", ()=>{ document.querySelector('.nav-item[data-tab="boletim"]').click(); });
+      provasWrap.appendChild(row);
+    });
+  }
+
+  // mini stats: saldo do mês, água hoje, streak de hábito mais alto
+  const monthKey = today.slice(0,7);
+  const myTx = finTx.filter(t=>t.owner===currentUserId && t.date && t.date.startsWith(monthKey));
+  const saldo = myTx.reduce((s,t)=> s + (t.type==="receita" ? Number(t.amount)||0 : -(Number(t.amount)||0)), 0);
+  document.getElementById("hojeFinSaldo").textContent = fmtMoney(saldo);
+  const dday = dietDay(currentUserId, today);
+  document.getElementById("hojeAgua").textContent = (dday.water||0)+"/"+WATER_TARGET;
+  const maxStreak = myHabits.reduce((m,h)=>Math.max(m, computeStreak(h)), 0);
+  document.getElementById("hojeStreak").textContent = maxStreak;
+}
+
+
 function renderEverything(){
   renderHead(); renderBody(); renderLegend(); renderCellSwatches(); renderScheduleOwnerFilter(); renderSchedDragTasks();
   fillSubjectSelects(); renderNotes();
@@ -3900,6 +4218,7 @@ function renderEverything(){
   renderProfileSwitcher();
   if(document.getElementById("revisao").classList.contains("active")) renderRevisao();
   if(document.getElementById("boletim").classList.contains("active")){ renderBoletimOwnerFilter(); renderBoletim(); }
+  if(document.getElementById("hoje").classList.contains("active")) renderHoje();
   if(document.getElementById("config").classList.contains("active")) renderSettings();
 }
 
@@ -3975,8 +4294,9 @@ fillCategorySelect(); fillOwnerSelects(); renderTasks();
 fillFinCategorySelects(); renderFinanceiro();
 renderDieta();
 renderProfileSwitcher();
+renderHoje();
 tickClock();
-setInterval(()=>{ tickClock(); renderBody(); }, 60000);
+setInterval(()=>{ tickClock(); renderBody(); if(document.getElementById("hoje").classList.contains("active")) renderHoje(); }, 60000);
 setSyncStatus(apiUrl ? "syncing" : "unconfigured");
 startSyncLoop();
 </script>
