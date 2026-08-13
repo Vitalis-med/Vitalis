@@ -1373,6 +1373,11 @@
           <input type="text" id="apiUrlInput" placeholder="https://script.google.com/macros/s/AAAA.../exec" style="font-family:'IBM Plex Mono',monospace; font-size:11.5px;">
           <button class="btn sm primary" id="btnSaveApiUrl">Salvar</button>
         </div>
+        <div style="font-size:10px; font-weight:700; color:var(--text-faint); text-transform:uppercase; letter-spacing:.05em; margin:12px 0 6px; font-family:'IBM Plex Mono',monospace;">Senha de sincronização (a mesma que você colocou em SHARED_SECRET no Apps Script)</div>
+        <div class="crud-add-row" style="margin-top:0; padding-top:0; border-top:none;">
+          <input type="password" id="apiSecretInput" placeholder="sua senha combinada com o colega" style="font-family:'IBM Plex Mono',monospace; font-size:11.5px;">
+          <button class="btn sm primary" id="btnSaveApiSecret">Salvar</button>
+        </div>
         <div style="display:flex; align-items:center; gap:12px; margin-top:12px; flex-wrap:wrap;">
           <button class="btn sm" id="btnSyncNow">↻ Sincronizar agora</button>
           <span class="autosave-status" id="syncStatusText"></span>
@@ -1687,6 +1692,7 @@ const GRADES_KEY = "vitalis_boletim_v1";
 const RV_STATS_KEY = "vitalis_revalida_stats_v1";
 const MIN_APPROVAL_KEY = "vitalis_nota_minima_v1";
 const API_URL_KEY = "vitalis_api_url_v1";
+const API_SECRET_KEY = "vitalis_api_secret_v1";
 const HABIT_DAY_LABELS = ["S","T","Q","Q","S","S","D"];
 const OUTRO_TAG = {id:"outro", name:"Outro / livre", hex:"#8A94A0"};
 
@@ -1695,6 +1701,7 @@ function load(key, fallback){
   return fallback;
 }
 let apiUrl = localStorage.getItem(API_URL_KEY) || "";
+let apiSecret = localStorage.getItem(API_SECRET_KEY) || "";
 let syncQueue = {};
 let syncTimer = null;
 let pullTimer = null;
@@ -4121,7 +4128,7 @@ async function flushSync(){
     const res = await fetch(apiUrl, {
       method: "POST",
       headers: {"Content-Type": "text/plain;charset=utf-8"},
-      body: JSON.stringify({action:"setAll", data: payload})
+      body: JSON.stringify({action:"setAll", data: payload, secret: apiSecret})
     });
     const json = await res.json();
     if(json && json.ok){ setSyncStatus("synced"); return true; }
@@ -4136,10 +4143,11 @@ async function flushSync(){
 async function pullAll(){
   if(!apiUrl) return null;
   try{
-    const res = await fetch(apiUrl + (apiUrl.includes("?")?"&":"?") + "action=getAll");
+    const sep = apiUrl.includes("?") ? "&" : "?";
+    const res = await fetch(apiUrl + sep + "action=getAll&secret=" + encodeURIComponent(apiSecret));
     const json = await res.json();
     if(json && json.ok) return json.data || {};
-    setSyncStatus("error", "resposta inesperada da API");
+    setSyncStatus("error", json && json.error ? json.error : "resposta inesperada da API");
   }catch(err){
     setSyncStatus("error", "sem conexão com a API");
   }
@@ -4386,6 +4394,14 @@ document.getElementById("btnSaveApiUrl").addEventListener("click", ()=>{
   localStorage.setItem(API_URL_KEY, v);
   toast(v ? "URL da API salva" : "Sincronização desativada");
   startSyncLoop();
+});
+document.getElementById("apiSecretInput").value = apiSecret;
+document.getElementById("btnSaveApiSecret").addEventListener("click", ()=>{
+  const v = document.getElementById("apiSecretInput").value;
+  apiSecret = v;
+  localStorage.setItem(API_SECRET_KEY, v);
+  toast("Senha de sincronização salva");
+  if(apiUrl) syncNow();
 });
 document.getElementById("btnSyncNow").addEventListener("click", ()=>{
   if(!apiUrl){ toast("Cola a URL da API primeiro"); return; }
