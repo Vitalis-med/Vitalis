@@ -1124,7 +1124,7 @@
     <header class="page-head">
       <div>
         <h1>Revisão espaçada</h1>
-        <p>Inspirado no Anki: marca uma anotação pra revisar e o painel avisa quando repassar de novo</p>
+        <p>Marca uma anotação pra revisar e o painel avisa quando repassar de novo</p>
       </div>
     </header>
 
@@ -1138,7 +1138,7 @@
 
     <div class="side-card" style="margin-top:22px;">
       <h4>Como funciona</h4>
-      <p class="hint" style="margin:0;">Ao marcar uma anotação para revisão (no editor, botão "Revisão espaçada"), ela entra num ciclo de intervalos crescentes: 1 → 3 → 7 → 14 → 30 → 90 dias. Se você disser que lembrou bem, o intervalo aumenta. Se esqueceu, volta pro início — igual à lógica por trás do Anki.</p>
+      <p class="hint" style="margin:0;">Ao marcar uma anotação para revisão (no editor, botão "Revisão espaçada"), ela entra num ciclo de intervalos crescentes: 1 → 3 → 7 → 14 → 30 → 90 dias. Se você disser que lembrou bem, o intervalo aumenta. Se esqueceu, volta pro início.</p>
     </div>
   </section>
 
@@ -1446,7 +1446,7 @@
 
       <div class="side-card" style="grid-column:1/-1;">
         <h4>Dados do painel</h4>
-        <p class="hint">Sem a URL acima, tudo fica salvo só neste navegador. Exporta de vez em quando pra não perder nada — principalmente antes de trocar de computador ou navegador.</p>
+        <p class="hint">Seus dados já ficam salvos na sua conta automaticamente. Esse backup é só uma cópia extra de segurança — útil antes de mexer em algo arriscado, ou pra levar dados de um lugar pro outro.</p>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <button class="btn" id="btnExportData">↓ Exportar backup (.json)</button>
           <button class="btn" id="btnImportData">↑ Importar backup</button>
@@ -1483,6 +1483,7 @@
         <label>Senha inicial</label>
         <input type="text" id="adminNewPassword" placeholder="mínimo 4 caracteres">
         <button class="btn primary" id="btnAdminCreate" style="margin-top:12px; width:100%; justify-content:center;">Criar conta</button>
+        <div class="login-error" id="adminCreateError" style="text-align:left; margin-top:8px;"></div>
       </div>
 
       <div class="side-card">
@@ -1495,7 +1496,7 @@
     </div>
   </section>
 
-  <footer class="foot">Dados salvos neste navegador · próximo passo: sincronizar com Google Sheets para os dois usuários</footer>
+  <footer class="foot"></footer>
 </main>
 
 <div id="toastHost"></div>
@@ -1939,10 +1940,11 @@ let schedules = load(SCHEDULE_KEY, null);
 if(schedules === null){
   schedules = {};
   const oldFlat = load("painel_estudos_horario_v4", null); // formato anterior: um mapa só, compartilhado
-  USERS.forEach(u=>{
-    schedules[u.id] = oldFlat ? JSON.parse(JSON.stringify(oldFlat)) : JSON.parse(JSON.stringify(DEFAULT_SCHEDULE_Q));
-  });
-  save(SCHEDULE_KEY, schedules);
+  if(oldFlat){
+    USERS.forEach(u=>{ schedules[u.id] = JSON.parse(JSON.stringify(oldFlat)); });
+    save(SCHEDULE_KEY, schedules);
+  }
+  // sem dado antigo pra migrar: fica vazio mesmo, cada conta nova começa zerada
 }
 // normaliza cada célula pra ARRAY de compromissos (permite dois no mesmo horário).
 // dados antigos guardavam um objeto único por célula — migra pra [objeto] com id.
@@ -1964,31 +1966,19 @@ if(schedules === null){
   if(changed) save(SCHEDULE_KEY, schedules);
 })();
 function getSchedule(uidParam){
-  if(!schedules[uidParam]){
-    const seeded = {};
-    Object.keys(DEFAULT_SCHEDULE_Q).forEach(k=>{
-      const v = DEFAULT_SCHEDULE_Q[k];
-      seeded[k] = v ? [{...v, id: uid2()}] : [];
-    });
-    schedules[uidParam] = seeded;
-  }
+  if(!schedules[uidParam]) schedules[uidParam] = {}; // perfil novo começa zerado
   return schedules[uidParam];
 }
 let scheduleViewUserId = currentUserId;
 
-// boletim de notas — também por pessoa, semeado com as matérias reais do semestre
-const ACADEMIC_SUBJECT_NAMES = ["Fisiología Humana I","Psicología médica","Epidemiología","Metodología de la Investigación I","Guaraní Médico","Bioestadística","Inmunología","Genética","Módulo Integrador Sutura"];
+// boletim de notas — também por pessoa. Perfil novo começa sem matérias
+// (cada um adiciona as suas); só é semeado automaticamente se quem estiver
+// logado quiser aplicar o modelo padrão manualmente na Configurações.
 let boletim = load(GRADES_KEY, {});
 let minApproval = load(MIN_APPROVAL_KEY, 60);
 let boletimViewUserId = currentUserId;
 function ensureBoletim(uid){
-  if(!boletim[uid]){
-    boletim[uid] = ACADEMIC_SUBJECT_NAMES.map(name=>{
-      const t = tagByName(name);
-      return {id:uid2(), name, color: t ? t.hex : "#8A94A0", items:[]};
-    });
-    save(GRADES_KEY, boletim);
-  }
+  if(!boletim[uid]) boletim[uid] = [];
   return boletim[uid];
 }
 function uid2(){ return uid(); } // apelido pra evitar sombra de parâmetro "uid" nas funções acima
@@ -3758,9 +3748,21 @@ document.getElementById("importFileInput").addEventListener("change", (e)=>{
   };
   reader.readAsText(file);
 });
-document.getElementById("btnResetData").addEventListener("click", ()=>{
-  if(!confirm("Isso apaga TODOS os dados salvos neste navegador (cronograma, anotações, tarefas, hábitos, perfis, financeiro, alimentação). Não pode ser desfeito. Continuar?")) return;
-  [SCHEDULE_KEY,NOTES_KEY,TASKS_KEY,TAGS_KEY,CATEGORIES_KEY,USERS_KEY,HABITS_KEY,CURRENT_USER_KEY,FIN_TX_KEY,FIN_CATEGORIES_KEY,CURRENCY_KEY,DIET_KEY].forEach(k=>localStorage.removeItem(k));
+document.getElementById("btnResetData").addEventListener("click", async ()=>{
+  if(!confirm("Isso apaga TODOS os seus dados (cronograma, anotações, tarefas, hábitos, perfis, financeiro, alimentação, boletim) — inclusive o que já está sincronizado na sua conta. Não pode ser desfeito. Continuar?")) return;
+  const emptyValues = {
+    [SCHEDULE_KEY]: {}, [NOTES_KEY]: [], [TASKS_KEY]: [], [TAGS_KEY]: TAGS_SEED, [CATEGORIES_KEY]: CATEGORIES_SEED,
+    [USERS_KEY]: [{id:uid(), name: sessionDisplayName||"Eu", color:"#3E8478"}], [HABITS_KEY]: {},
+    [FIN_TX_KEY]: [], [FIN_CATEGORIES_KEY]: FIN_CATEGORIES_SEED, [CURRENCY_KEY]: "₲", [DIET_KEY]: {},
+    [GRADES_KEY]: {}, [RV_STATS_KEY]: {}
+  };
+  if(apiUrl && sessionToken){
+    toast("Apagando os dados da sua conta…");
+    for(const k of Object.keys(emptyValues)){
+      await sendKeyValue_(k, emptyValues[k]);
+    }
+  }
+  Object.keys(emptyValues).concat([CURRENT_USER_KEY]).forEach(k=>localStorage.removeItem(k));
   location.reload();
 });
 
@@ -4677,19 +4679,25 @@ async function renderAdminAccounts(){
   });
 }
 document.getElementById("btnAdminCreate").addEventListener("click", async ()=>{
+  const errEl = document.getElementById("adminCreateError");
+  errEl.textContent = "";
   const username = document.getElementById("adminNewUsername").value.trim().toLowerCase();
   const displayName = document.getElementById("adminNewDisplayName").value.trim();
   const password = document.getElementById("adminNewPassword").value;
-  if(!username || !password){ toast("Preenche usuário e senha"); return; }
-  const r = await adminCall_("adminCreateAccount", {username, password, displayName});
-  if(r.ok){
-    toast("Conta criada — passa usuário e senha pra pessoa");
-    document.getElementById("adminNewUsername").value = "";
-    document.getElementById("adminNewDisplayName").value = "";
-    document.getElementById("adminNewPassword").value = "";
-    renderAdminAccounts();
-  }else{
-    toast(r.error || "Erro ao criar conta");
+  if(!username || !password){ errEl.textContent = "Preenche usuário e senha"; return; }
+  try{
+    const r = await adminCall_("adminCreateAccount", {username, password, displayName});
+    if(r && r.ok){
+      toast("Conta criada — passa usuário e senha pra pessoa");
+      document.getElementById("adminNewUsername").value = "";
+      document.getElementById("adminNewDisplayName").value = "";
+      document.getElementById("adminNewPassword").value = "";
+      renderAdminAccounts();
+    }else{
+      errEl.textContent = (r && r.error) || "Erro ao criar conta (resposta vazia da API)";
+    }
+  }catch(err){
+    errEl.textContent = "Erro de conexão: " + (err && err.message ? err.message : String(err));
   }
 });
 document.getElementById("btnChangeMyPassword").addEventListener("click", async ()=>{
