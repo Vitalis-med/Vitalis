@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Vitalis">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap" rel="stylesheet">
 <style>
@@ -857,13 +858,8 @@
     <h1>Vitalis</h1>
     <p class="login-sub">Entre com a conta que o administrador criou pra você</p>
 
-    <div id="loginUrlSection" style="display:none;">
-      <label>URL da API (Apps Script)</label>
-      <input type="text" id="loginApiUrl" placeholder="https://script.google.com/macros/s/AAAA.../exec">
-    </div>
-
-    <label>Usuário</label>
-    <input type="text" id="loginUsername" autocomplete="username" placeholder="seu.usuario">
+    <label>Email</label>
+    <input type="email" id="loginUsername" autocomplete="username" placeholder="seu@email.com">
     <label>Senha</label>
     <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••••">
 
@@ -1368,13 +1364,9 @@
 
     <div class="config-grid">
       <div class="side-card" style="grid-column:1/-1;">
-        <h4>Sincronização — Google Sheets</h4>
-        <p class="hint">URL da API configurada no login. Você só precisa mexer aqui se for trocar de planilha.</p>
-        <div class="crud-add-row" style="margin-top:0; padding-top:0; border-top:none;">
-          <input type="text" id="apiUrlInput" placeholder="https://script.google.com/macros/s/AAAA.../exec" style="font-family:'IBM Plex Mono',monospace; font-size:11.5px;">
-          <button class="btn sm primary" id="btnSaveApiUrl">Salvar</button>
-        </div>
-        <div style="display:flex; align-items:center; gap:12px; margin-top:12px; flex-wrap:wrap;">
+        <h4>Sincronização — Supabase</h4>
+        <p class="hint">Seus dados sincronizam sozinhos com sua conta assim que você faz login.</p>
+        <div style="display:flex; align-items:center; gap:12px; margin-top:4px; flex-wrap:wrap;">
           <button class="btn sm" id="btnSyncNow">↻ Sincronizar agora</button>
           <span class="autosave-status" id="syncStatusText"></span>
         </div>
@@ -1398,7 +1390,7 @@
     <header class="page-head">
       <div>
         <h1>Administração</h1>
-        <p>Criar, editar e remover contas — só você (administrador) vê essa aba</p>
+        <p>Só você (administrador) vê essa aba</p>
       </div>
     </header>
 
@@ -1409,24 +1401,23 @@
         <div id="adminAccountsList"></div>
       </div>
 
-      <div class="side-card">
-        <h4>Criar nova conta</h4>
-        <p class="hint">Combina o usuário e senha com a pessoa antes, e passa pra ela depois de criar.</p>
-        <label>Nome de usuário (só letras minúsculas, números, _ ou .)</label>
-        <input type="text" id="adminNewUsername" placeholder="ex: oziel">
-        <label>Nome de exibição</label>
-        <input type="text" id="adminNewDisplayName" placeholder="ex: Oziel">
-        <label>Senha inicial</label>
-        <input type="text" id="adminNewPassword" placeholder="mínimo 4 caracteres">
-        <button class="btn primary" id="btnAdminCreate" style="margin-top:12px; width:100%; justify-content:center;">Criar conta</button>
-        <div class="login-error" id="adminCreateError" style="text-align:left; margin-top:8px;"></div>
+      <div class="side-card" style="grid-column:1/-1;">
+        <h4>Criar, excluir ou redefinir senha de uma conta</h4>
+        <p class="hint">
+          Isso agora acontece direto no painel do Supabase, pra manter a segurança de verdade
+          (a chave que fica aqui no site nunca tem permissão de criar/apagar contas — só a
+          própria pessoa dona da conta ou você, logado no Supabase, consegue).
+          Vai em <b>supabase.com</b> → seu projeto → <b>Authentication → Users</b>.
+          Lá dá pra: "Add user" (cria conta nova, com email e senha),
+          clicar numa conta pra redefinir a senha dela, ou excluir.
+        </p>
       </div>
 
       <div class="side-card">
         <h4>Minha conta</h4>
-        <p class="hint">Trocar a própria senha de administrador.</p>
+        <p class="hint">Trocar a própria senha.</p>
         <label>Nova senha</label>
-        <input type="text" id="myNewPassword" placeholder="mínimo 4 caracteres">
+        <input type="text" id="myNewPassword" placeholder="mínimo 6 caracteres">
         <button class="btn" id="btnChangeMyPassword" style="margin-top:12px; width:100%; justify-content:center;">Trocar minha senha</button>
       </div>
     </div>
@@ -1610,14 +1601,9 @@
 <!-- ===== Modal: gerenciar perfis ===== -->
 <div class="overlay" id="overlayProfilesEdit">
   <div class="modal sm">
-    <h3>Perfis</h3>
-    <div class="meta-line">Cada perfil tem as próprias tarefas e hábitos, pra não misturar</div>
+    <h3>Meu perfil</h3>
+    <div class="meta-line">Nome e cor usados no painel — 1 perfil por conta</div>
     <div id="usersList"></div>
-    <div class="crud-add-row">
-      <input type="color" id="newUserColor" value="#2F6F63">
-      <input type="text" id="newUserName" placeholder="Nome do novo perfil">
-      <button class="btn sm primary" id="btnAddUser">Adicionar</button>
-    </div>
     <div class="modal-actions"><div></div><div class="right"><button class="btn" id="profilesEditClose">Fechar</button></div></div>
   </div>
 </div>
@@ -1729,25 +1715,6 @@
   </div>
 </div>
 
-<!-- ===== Modal: novo perfil ===== -->
-<div class="overlay" id="overlayUser">
-  <div class="modal sm">
-    <h3>Novo perfil</h3>
-    <div class="meta-line">Cada perfil tem as próprias tarefas e hábitos</div>
-    <label>Nome</label>
-    <input type="text" id="userNameInput" placeholder="Ex: Paulo Vitor">
-    <label>Cor</label>
-    <input type="color" id="userColorInput" value="#2F6F63" style="width:100%; height:40px; border:1px solid var(--border-strong); border-radius:8px; cursor:pointer;">
-    <div class="modal-actions">
-      <div></div>
-      <div class="right">
-        <button class="btn" id="userCancel">Cancelar</button>
-        <button class="btn primary" id="userCreate">Criar perfil</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ===== Modal: célula do cronograma ===== -->
 <div class="overlay" id="overlayCell">
   <div class="modal sm">
@@ -1773,16 +1740,22 @@
 
 <script>
 /* ======================================================================
-   SESSÃO (login) — precisa vir antes de tudo
+   SUPABASE — configuração e sessão
 ====================================================================== */
-const SESSION_TOKEN_KEY = "vitalis_session_token_v1";
+const SUPABASE_URL = "https://zqxhlgicnaadlqbjvxis.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_BlaldfJdGuFw7JpXwzzuXg_wBP7u_Wj";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// cache leve só pra desenhar a tela na hora, sem esperar a checagem de
+// verdade (que é assíncrona) — a fonte de verdade é sempre a sessão real
+// do Supabase, conferida logo no início da inicialização
 const SESSION_ROLE_KEY = "vitalis_session_role_v1";
 const SESSION_DISPLAYNAME_KEY = "vitalis_session_displayname_v1";
-const SESSION_USERNAME_KEY = "vitalis_session_username_v1";
-let sessionToken = localStorage.getItem(SESSION_TOKEN_KEY) || "";
+const SESSION_EMAIL_KEY = "vitalis_session_email_v1";
 let sessionRole = localStorage.getItem(SESSION_ROLE_KEY) || "";
 let sessionDisplayName = localStorage.getItem(SESSION_DISPLAYNAME_KEY) || "";
-let sessionUsername = localStorage.getItem(SESSION_USERNAME_KEY) || "";
+let sessionEmail = localStorage.getItem(SESSION_EMAIL_KEY) || "";
+let sessionUserId = null; // preenchido depois que a sessão real é confirmada
 
 /* ======================================================================
    CHAVES DE ARMAZENAMENTO
@@ -1829,8 +1802,6 @@ const SRS_LOG_KEY = "painel_estudos_srs_log_v1";
 const GRADES_KEY = "vitalis_boletim_v1";
 const RV_STATS_KEY = "vitalis_revalida_stats_v1";
 const MIN_APPROVAL_KEY = "vitalis_nota_minima_v1";
-const API_URL_KEY = "vitalis_api_url_v1";
-const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbzmlmVpDtP6EFyS0HaGpOZ7M05gwtxAij9xsZ-qdLuUHXePPB0Wh1Y4KCBndtRBMU6d/exec";
 const HABIT_DAY_LABELS = ["S","T","Q","Q","S","S","D"];
 const OUTRO_TAG = {id:"outro", name:"Outro / livre", hex:"#8A94A0"};
 
@@ -1838,10 +1809,8 @@ function load(key, fallback){
   try{ const raw = localStorage.getItem(key); if(raw) return JSON.parse(raw); }catch(e){}
   return fallback;
 }
-let apiUrl = localStorage.getItem(API_URL_KEY) || DEFAULT_API_URL;
 let syncQueue = {};
 let syncTimer = null;
-let pullTimer = null;
 function save(key, data){ localStorage.setItem(key, JSON.stringify(data)); queueSync(key, data); }
 function uid(){ return "id"+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
@@ -3481,63 +3450,15 @@ function renderProfileSwitcher(){
   wrap.innerHTML = "";
   USERS.forEach(u=>{
     const btn = document.createElement("button");
-    btn.className = "profile-btn" + (u.id===currentUserId ? " active" : "");
+    btn.className = "profile-btn active"; // só existe 1 perfil por conta agora
     btn.style.background = u.color;
     btn.textContent = initials(u.name);
     btn.title = u.name;
-    btn.addEventListener("click", ()=>{
-      currentUserId = u.id;
-      save(CURRENT_USER_KEY, currentUserId);
-      ownerFilter = currentUserId;
-      scheduleViewUserId = currentUserId;
-      boletimViewUserId = currentUserId;
-      renderProfileSwitcher();
-      renderTasks();
-      renderSettings();
-      if(document.getElementById("cronograma").classList.contains("active")){ renderBody(); renderScheduleOwnerFilter(); renderSchedDragTasks(); }
-      if(document.getElementById("boletim").classList.contains("active")){ renderBoletimOwnerFilter(); renderBoletim(); }
-      if(document.getElementById("financeiro").classList.contains("active")) renderFinanceiro();
-      if(document.getElementById("dieta").classList.contains("active")) renderDieta();
-      if(document.getElementById("hoje").classList.contains("active")) renderHoje();
-      toast("Perfil: "+u.name);
-    });
     wrap.appendChild(btn);
   });
-  const addBtn = document.createElement("button");
-  addBtn.className = "profile-add"; addBtn.textContent = "+"; addBtn.title = "Novo perfil";
-  addBtn.addEventListener("click", openUserModal);
-  wrap.appendChild(addBtn);
   const current = userById(currentUserId);
   document.getElementById("profileCurrentLabel").innerHTML = current ? "Usando como <b>"+escapeHtml(current.name)+"</b>" : "—";
 }
-function openUserModal(){
-  document.getElementById("userNameInput").value = "";
-  document.getElementById("userColorInput").value = "#2F6F63";
-  document.getElementById("overlayUser").classList.add("open");
-  document.getElementById("userNameInput").focus();
-}
-function closeUserModal(){ document.getElementById("overlayUser").classList.remove("open"); }
-document.getElementById("userCancel").addEventListener("click", closeUserModal);
-document.getElementById("overlayUser").addEventListener("click", e=>{ if(e.target.id==="overlayUser") closeUserModal(); });
-function createUser(){
-  const name = document.getElementById("userNameInput").value.trim();
-  if(!name) return;
-  const color = document.getElementById("userColorInput").value;
-  const u = {id:uid(), name, color};
-  USERS.push(u);
-  save(USERS_KEY, USERS);
-  currentUserId = u.id;
-  save(CURRENT_USER_KEY, currentUserId);
-  ownerFilter = currentUserId;
-  closeUserModal();
-  renderProfileSwitcher();
-  fillOwnerSelects();
-  renderTasks();
-  renderSettings();
-  toast("Perfil \""+name+"\" criado");
-}
-document.getElementById("userCreate").addEventListener("click", createUser);
-document.getElementById("userNameInput").addEventListener("keydown", e=>{ if(e.key==="Enter") createUser(); });
 
 /* ======================================================================
    CONFIGURAÇÕES — CRUD de perfis, matérias, categorias, hábitos, dados
@@ -3545,27 +3466,19 @@ document.getElementById("userNameInput").addEventListener("keydown", e=>{ if(e.k
 function crudRow(name, color, handlers){
   const row = document.createElement("div");
   row.className = "crud-row";
-  row.innerHTML = `<input type="color" class="crud-color" value="${color}"><input type="text" class="crud-name" value="${escapeHtml(name)}"><button class="crud-del" title="Excluir">×</button>`;
+  row.innerHTML = `<input type="color" class="crud-color" value="${color}"><input type="text" class="crud-name" value="${escapeHtml(name)}">`+(handlers.noDelete ? "" : `<button class="crud-del" title="Excluir">×</button>`);
   row.querySelector(".crud-color").addEventListener("input", e=> handlers.onColor(e.target.value));
   row.querySelector(".crud-name").addEventListener("change", e=> handlers.onRename(e.target.value.trim()));
-  row.querySelector(".crud-del").addEventListener("click", handlers.onDelete);
+  if(!handlers.noDelete) row.querySelector(".crud-del").addEventListener("click", handlers.onDelete);
   return row;
 }
 function renderUsersSettings(){
   const wrap = document.getElementById("usersList"); wrap.innerHTML = "";
   USERS.forEach(u=>{
     wrap.appendChild(crudRow(u.name, u.color, {
+      noDelete: true,
       onRename:(v)=>{ if(!v) return; u.name=v; save(USERS_KEY,USERS); renderProfileSwitcher(); fillOwnerSelects(); renderTasks(); toast("Perfil renomeado"); },
-      onColor:(v)=>{ u.color=v; save(USERS_KEY,USERS); renderProfileSwitcher(); renderTasks(); },
-      onDelete:()=>{
-        if(USERS.length<=1){ toast("Precisa manter pelo menos um perfil"); return; }
-        if(!confirm('Excluir o perfil "'+u.name+'"? As tarefas dele continuam salvas, só ficam sem avatar.')) return;
-        USERS = USERS.filter(x=>x.id!==u.id);
-        if(currentUserId===u.id){ currentUserId = USERS[0].id; ownerFilter = currentUserId; }
-        save(USERS_KEY,USERS); save(CURRENT_USER_KEY,currentUserId);
-        renderUsersSettings(); renderProfileSwitcher(); fillOwnerSelects(); renderTasks(); renderSettings();
-        toast("Perfil excluído");
-      }
+      onColor:(v)=>{ u.color=v; save(USERS_KEY,USERS); renderProfileSwitcher(); renderTasks(); }
     }));
   });
   if(USERS.length===0) wrap.innerHTML = '<div class="crud-empty">Nenhum perfil</div>';
@@ -3714,17 +3627,6 @@ document.getElementById("currencySymbolInput").addEventListener("change", e=>{
   toast("Símbolo da moeda atualizado");
 });
 
-function addUserFromSettings(){
-  const name = document.getElementById("newUserName").value.trim();
-  if(!name) return;
-  USERS.push({id:uid(), name, color:document.getElementById("newUserColor").value});
-  save(USERS_KEY, USERS);
-  document.getElementById("newUserName").value = "";
-  renderUsersSettings(); renderProfileSwitcher(); fillOwnerSelects(); renderTasks();
-  toast("Perfil adicionado");
-}
-document.getElementById("btnAddUser").addEventListener("click", addUserFromSettings);
-document.getElementById("newUserName").addEventListener("keydown", e=>{ if(e.key==="Enter") addUserFromSettings(); });
 
 function addHabit(){
   const name = document.getElementById("newHabitName").value.trim();
@@ -3798,11 +3700,10 @@ document.getElementById("btnResetData").addEventListener("click", async ()=>{
     [FIN_TX_KEY]: [], [FIN_CATEGORIES_KEY]: FIN_CATEGORIES_SEED, [CURRENCY_KEY]: "₲", [DIET_KEY]: {},
     [GRADES_KEY]: {}, [RV_STATS_KEY]: {}
   };
-  if(apiUrl && sessionToken){
+  if(sessionUserId){
     toast("Apagando os dados da sua conta…");
-    for(const k of Object.keys(emptyValues)){
-      await sendKeyValue_(k, emptyValues[k]);
-    }
+    const rows = Object.keys(emptyValues).map(k=>({user_id: sessionUserId, key:k, value: emptyValues[k]}));
+    await sb.from("app_data").upsert(rows, {onConflict:"user_id,key"});
   }
   Object.keys(emptyValues).concat([CURRENT_USER_KEY]).forEach(k=>localStorage.removeItem(k));
   location.reload();
@@ -4251,71 +4152,46 @@ function setSyncStatus(state, extra){
   const now = new Date();
   const hhmm = String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
   const map = {
-    unconfigured: "local apenas",
+    unconfigured: "não logado",
     syncing: "sincronizando…",
     synced: "sincronizado "+hhmm,
     error: "falha ao sincronizar"
   };
-  label.textContent = map[state] || "local apenas";
+  label.textContent = map[state] || "não logado";
   if(cfgText){
     cfgText.innerHTML = state==="unconfigured"
-      ? '<span class="sv-dot" style="background:#4A5058;"></span> Nenhuma URL configurada ainda'
+      ? '<span class="sv-dot" style="background:#4A5058;"></span> Faça login pra sincronizar'
       : '<span class="sv-dot" style="background:'+(state==="error"?"var(--now)":"var(--primary)")+';"></span> '+(map[state]||"")+(extra?" — "+extra:"");
   }
 }
 
 function queueSync(key, value){
-  if(!apiUrl) return;
+  if(!sessionUserId) return; // ainda não logado
   if(!syncMap().some(m=>m.key===key)) return; // só sincroniza chaves compartilhadas
   syncQueue[key] = value;
   clearTimeout(syncTimer);
   syncTimer = setTimeout(flushSync, 1000);
 }
 
-function forceLogout_(msg){
-  [SESSION_TOKEN_KEY, SESSION_ROLE_KEY, SESSION_DISPLAYNAME_KEY, SESSION_USERNAME_KEY].forEach(k=>localStorage.removeItem(k));
+async function forceLogout_(msg){
   clearLocalAppData_();
+  try{ await sb.auth.signOut(); }catch(e){}
   alert(msg || "Sua sessão expirou. Faz login de novo.");
   location.reload();
 }
-// GET com os dados dentro da própria URL — sobrevive ao redirecionamento
-// interno do Apps Script (POST vira GET nesse redirecionamento nos
-// navegadores, então evitamos depender de corpo de requisição).
-async function apiCall_(url, payloadObj){
-  const q = "?payload=" + encodeURIComponent(JSON.stringify(payloadObj));
-  const res = await fetch(url + q);
-  return await res.json();
-}
-const MAX_URL_PAYLOAD = 600; // caracteres brutos por fatia — com acentos/aspas a URL final expande ~2.7x, isso mantém a URL final com folga abaixo de 2000
-async function sendKeyValue_(key, value){
-  const valueJson = JSON.stringify(value);
-  if(encodeURIComponent(valueJson).length <= MAX_URL_PAYLOAD){
-    return await apiCall_(apiUrl, {action:"setAll", token: sessionToken, data:{[key]: value}});
-  }
-  // valor grande demais pra uma URL só (ex: cronograma inteiro) — fatia e remonta do outro lado
-  const requestId = uid2();
-  const totalChunks = Math.ceil(valueJson.length / MAX_URL_PAYLOAD);
-  let lastRes = null;
-  for(let i=0;i<totalChunks;i++){
-    const chunk = valueJson.slice(i*MAX_URL_PAYLOAD, (i+1)*MAX_URL_PAYLOAD);
-    lastRes = await apiCall_(apiUrl, {action:"setChunk", token: sessionToken, key, requestId, chunkIndex:i, totalChunks, chunk});
-    if(!lastRes || !lastRes.ok) return lastRes;
-  }
-  return lastRes;
-}
+
 async function flushSync(){
-  if(!apiUrl || !sessionToken) return null;
+  if(!sessionUserId) return null;
   const payload = syncQueue;
   syncQueue = {};
   if(Object.keys(payload).length === 0) return null; // nada pra enviar
   setSyncStatus("syncing");
+  const rows = Object.keys(payload).map(k=>({user_id: sessionUserId, key:k, value: payload[k]}));
   try{
-    for(const key of Object.keys(payload)){
-      const res = await sendKeyValue_(key, payload[key]);
-      if(!res || !res.ok){
-        if(res && /sess(ã|a)o/i.test(res.error||"")){ forceLogout_(); return false; }
-        throw new Error((res && res.error) || "resposta inválida");
-      }
+    const {error} = await sb.from("app_data").upsert(rows, {onConflict:"user_id,key"});
+    if(error){
+      if(error.code === "PGRST301" || /jwt|token/i.test(error.message||"")){ forceLogout_(); return false; }
+      throw error;
     }
     setSyncStatus("synced");
     return true;
@@ -4327,26 +4203,32 @@ async function flushSync(){
 }
 
 async function pullAll(){
-  if(!apiUrl || !sessionToken) return null;
+  if(!sessionUserId) return null;
   try{
-    const json = await apiCall_(apiUrl, {action:"getAll", token: sessionToken});
-    if(json && json.ok) return json.data || {};
-    if(json && /sess(ã|a)o/i.test(json.error||"")){ forceLogout_(); return null; }
-    setSyncStatus("error", json && json.error ? json.error : "resposta inesperada da API");
+    const {data, error} = await sb.from("app_data").select("key, value");
+    if(error){
+      if(error.code === "PGRST301" || /jwt|token/i.test(error.message||"")){ forceLogout_(); return null; }
+      setSyncStatus("error", error.message);
+      return null;
+    }
+    const result = {};
+    (data||[]).forEach(row=>{ result[row.key] = row.value; });
+    return result;
   }catch(err){
-    setSyncStatus("error", "sem conexão com a API");
+    setSyncStatus("error", "sem conexão com o Supabase");
+    return null;
   }
-  return null;
 }
 
 function hydrateFromServer(serverData){
   const toSeed = {};
   syncMap().forEach(m=>{
+    if(Object.prototype.hasOwnProperty.call(syncQueue, m.key)) return; // já tem edição local esperando pra ser enviada — não deixa o servidor pisar em cima
     if(Object.prototype.hasOwnProperty.call(serverData, m.key) && serverData[m.key] != null){
       m.set(serverData[m.key]);
       localStorage.setItem(m.key, JSON.stringify(serverData[m.key]));
     }else{
-      toSeed[m.key] = m.get(); // planilha ainda não tem essa chave: manda o que já temos localmente
+      toSeed[m.key] = m.get(); // banco ainda não tem essa chave: manda o que já temos localmente
     }
   });
   if(Object.keys(toSeed).length){
@@ -4548,7 +4430,7 @@ function isEditingSomething(){
 }
 
 async function syncNow(){
-  if(!apiUrl || !sessionToken){ setSyncStatus("unconfigured"); return; }
+  if(!sessionUserId){ setSyncStatus("unconfigured"); return; }
   setSyncStatus("syncing");
   let pullOk = false;
   if(!isEditingSomething()){
@@ -4564,24 +4446,16 @@ async function syncNow(){
   // se pullOk é false e pushResult não deu certo, o status de erro já setado continua visível
 }
 
+let pullTimer = null;
 function startSyncLoop(){
   clearInterval(pullTimer);
-  if(!apiUrl || !sessionToken){ setSyncStatus("unconfigured"); return; }
+  if(!sessionUserId){ setSyncStatus("unconfigured"); return; }
   syncNow();
   pullTimer = setInterval(syncNow, 25000);
   document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) syncNow(); });
 }
-
-document.getElementById("apiUrlInput").value = apiUrl;
-document.getElementById("btnSaveApiUrl").addEventListener("click", ()=>{
-  const v = document.getElementById("apiUrlInput").value.trim();
-  apiUrl = v;
-  localStorage.setItem(API_URL_KEY, v);
-  toast(v ? "URL da API salva" : "Sincronização desativada");
-  startSyncLoop();
-});
 document.getElementById("btnSyncNow").addEventListener("click", ()=>{
-  if(!apiUrl){ toast("Cola a URL da API primeiro"); return; }
+  if(!sessionUserId){ toast("Faz login primeiro"); return; }
   syncNow();
 });
 document.getElementById("btnEditMinApproval").addEventListener("click", ()=>{
@@ -4631,40 +4505,61 @@ function clearLocalAppData_(){
   ].forEach(k=> localStorage.removeItem(k));
 }
 
-if(sessionToken){
-  document.getElementById("loginScreen").classList.add("hidden");
-}else{
-  document.getElementById("loginScreen").classList.remove("hidden");
-  if(!apiUrl) document.getElementById("loginUrlSection").style.display = "block";
+function traduzErroLogin_(msg){
+  if(/invalid login credentials/i.test(msg)) return "Email ou senha incorretos";
+  if(/email not confirmed/i.test(msg)) return "Email ainda não confirmado";
+  return msg;
 }
-if(sessionRole === "admin") document.getElementById("navAdminBtn").style.display = "flex";
-if(sessionUsername){ document.getElementById("logoutLabel").textContent = "Sair (@"+sessionUsername+")"; }
+
+async function checkSession_(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){
+    document.getElementById("loginScreen").classList.remove("hidden");
+    setSyncStatus("unconfigured");
+    return;
+  }
+  const {data:profile, error} = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+  if(error || !profile){
+    document.getElementById("loginScreen").classList.remove("hidden");
+    setSyncStatus("unconfigured");
+    return;
+  }
+  sessionUserId = session.user.id;
+  sessionRole = profile.role;
+  sessionDisplayName = profile.display_name;
+  sessionEmail = session.user.email;
+  localStorage.setItem(SESSION_ROLE_KEY, sessionRole);
+  localStorage.setItem(SESSION_DISPLAYNAME_KEY, sessionDisplayName);
+  localStorage.setItem(SESSION_EMAIL_KEY, sessionEmail);
+
+  document.getElementById("loginScreen").classList.add("hidden");
+  if(sessionRole === "admin") document.getElementById("navAdminBtn").style.display = "flex";
+  document.getElementById("logoutLabel").textContent = "Sair ("+sessionEmail+")";
+
+  // se o perfil interno ainda não tem o nome certo (ex: primeira carga), corrige
+  if(USERS[0] && USERS[0].name !== sessionDisplayName){
+    USERS[0].name = sessionDisplayName;
+    save(USERS_KEY, USERS);
+    renderProfileSwitcher();
+  }
+  startSyncLoop();
+}
+checkSession_();
 
 document.getElementById("btnLogin").addEventListener("click", async ()=>{
   const errEl = document.getElementById("loginError");
   const statusEl = document.getElementById("loginStatus");
   errEl.textContent = "";
-  const urlSection = document.getElementById("loginUrlSection");
-  const url = (urlSection.style.display !== "none" ? document.getElementById("loginApiUrl").value.trim() : apiUrl) || apiUrl;
-  const username = document.getElementById("loginUsername").value.trim();
+  const email = document.getElementById("loginUsername").value.trim();
   const password = document.getElementById("loginPassword").value;
-  if(!url){ errEl.textContent = "Cola a URL da API primeiro"; return; }
-  if(!username || !password){ errEl.textContent = "Preenche usuário e senha"; return; }
+  if(!email || !password){ errEl.textContent = "Preenche email e senha"; return; }
   statusEl.textContent = "Entrando…";
   try{
-    const json = await apiCall_(url, {action:"login", username, password});
+    const {error} = await sb.auth.signInWithPassword({email, password});
     statusEl.textContent = "";
-    if(json && json.ok){
-      localStorage.setItem(API_URL_KEY, url);
-      localStorage.setItem(SESSION_TOKEN_KEY, json.token);
-      localStorage.setItem(SESSION_ROLE_KEY, json.role);
-      localStorage.setItem(SESSION_DISPLAYNAME_KEY, json.displayName);
-      localStorage.setItem(SESSION_USERNAME_KEY, json.username);
-      clearLocalAppData_();
-      location.reload();
-    }else{
-      errEl.textContent = (json && json.error) || "Não foi possível entrar";
-    }
+    if(error){ errEl.textContent = traduzErroLogin_(error.message); return; }
+    clearLocalAppData_();
+    location.reload();
   }catch(err){
     statusEl.textContent = "";
     errEl.textContent = "Erro de conexão: " + (err && err.message ? err.message : String(err));
@@ -4675,89 +4570,38 @@ document.getElementById("loginUsername").addEventListener("keydown", e=>{ if(e.k
 
 document.getElementById("navLogoutBtn").addEventListener("click", async ()=>{
   if(!confirm("Sair da sua conta?")) return;
-  try{
-    await apiCall_(apiUrl, {action:"logout", token: sessionToken});
-  }catch(e){}
-  [SESSION_TOKEN_KEY, SESSION_ROLE_KEY, SESSION_DISPLAYNAME_KEY, SESSION_USERNAME_KEY].forEach(k=>localStorage.removeItem(k));
+  try{ await sb.auth.signOut(); }catch(e){}
   clearLocalAppData_();
   location.reload();
 });
 
 /* ---- painel de administração ---- */
-async function adminCall_(action, extra){
-  if(!apiUrl || !sessionToken) return {ok:false, error:"sem sessão"};
-  try{
-    return await apiCall_(apiUrl, Object.assign({action, token: sessionToken}, extra||{}));
-  }catch(err){
-    return {ok:false, error:"sem conexão com a API"};
-  }
-}
 async function renderAdminAccounts(){
   const wrap = document.getElementById("adminAccountsList");
   wrap.innerHTML = '<div class="hoje-empty-mini">Carregando…</div>';
-  const res = await adminCall_("adminListAccounts");
-  if(!res.ok){ wrap.innerHTML = '<div class="hoje-empty-mini">'+escapeHtml(res.error||"Erro ao carregar")+'</div>'; return; }
-  if(res.accounts.length===0){ wrap.innerHTML = '<div class="hoje-empty-mini">Nenhuma conta ainda</div>'; return; }
+  const {data:accounts, error} = await sb.from("profiles").select("*").order("created_at");
+  if(error){ wrap.innerHTML = '<div class="hoje-empty-mini">'+escapeHtml(error.message)+'</div>'; return; }
+  if(!accounts || accounts.length===0){ wrap.innerHTML = '<div class="hoje-empty-mini">Nenhuma conta ainda</div>'; return; }
   wrap.innerHTML = "";
-  res.accounts.forEach(acc=>{
+  accounts.forEach(acc=>{
     const row = document.createElement("div");
     row.className = "admin-acc-row";
     row.innerHTML = `
-      <div class="aa-name"><b>${escapeHtml(acc.displayName)}</b><span class="aa-user">@${escapeHtml(acc.username)}</span></div>
+      <div class="aa-name"><b>${escapeHtml(acc.display_name)}</b><span class="aa-user">${escapeHtml(acc.id===sessionUserId ? sessionEmail : "")}</span></div>
       ${acc.role==="admin" ? '<span class="aa-role">admin</span>' : ''}
-      <div class="aa-actions">
-        <button class="aa-reset">Redefinir senha</button>
-        ${acc.role!=="admin" ? '<button class="aa-del danger">Excluir</button>' : ''}
-      </div>
     `;
-    row.querySelector(".aa-reset").addEventListener("click", async ()=>{
-      const np = prompt('Nova senha pra @'+acc.username+':');
-      if(!np) return;
-      const r = await adminCall_("adminResetPassword", {username:acc.username, newPassword:np});
-      toast(r.ok ? "Senha redefinida" : (r.error||"Erro"));
-    });
-    const delBtn = row.querySelector(".aa-del");
-    if(delBtn) delBtn.addEventListener("click", async ()=>{
-      if(!confirm('Excluir a conta @'+acc.username+' e TODOS os dados dela? Isso não pode ser desfeito.')) return;
-      const r = await adminCall_("adminDeleteAccount", {username:acc.username});
-      if(r.ok){ toast("Conta excluída"); renderAdminAccounts(); }
-      else toast(r.error||"Erro ao excluir");
-    });
     wrap.appendChild(row);
   });
 }
-document.getElementById("btnAdminCreate").addEventListener("click", async ()=>{
-  const errEl = document.getElementById("adminCreateError");
-  errEl.textContent = "";
-  const username = document.getElementById("adminNewUsername").value.trim().toLowerCase();
-  const displayName = document.getElementById("adminNewDisplayName").value.trim();
-  const password = document.getElementById("adminNewPassword").value;
-  if(!username || !password){ errEl.textContent = "Preenche usuário e senha"; return; }
-  try{
-    const r = await adminCall_("adminCreateAccount", {username, password, displayName});
-    if(r && r.ok){
-      toast("Conta criada — passa usuário e senha pra pessoa");
-      document.getElementById("adminNewUsername").value = "";
-      document.getElementById("adminNewDisplayName").value = "";
-      document.getElementById("adminNewPassword").value = "";
-      renderAdminAccounts();
-    }else{
-      errEl.textContent = (r && r.error) || "Erro ao criar conta (resposta vazia da API)";
-    }
-  }catch(err){
-    errEl.textContent = "Erro de conexão: " + (err && err.message ? err.message : String(err));
-  }
-});
 document.getElementById("btnChangeMyPassword").addEventListener("click", async ()=>{
   const np = document.getElementById("myNewPassword").value;
-  if(!np || np.length<4){ toast("Senha muito curta"); return; }
-  const r = await adminCall_("changePassword", {newPassword:np});
-  if(r.ok){ toast("Senha trocada com sucesso"); document.getElementById("myNewPassword").value = ""; }
-  else toast(r.error || "Erro ao trocar senha");
+  if(!np || np.length<6){ toast("Senha muito curta (mínimo 6 caracteres)"); return; }
+  const {error} = await sb.auth.updateUser({password: np});
+  if(!error){ toast("Senha trocada com sucesso"); document.getElementById("myNewPassword").value = ""; }
+  else toast(error.message || "Erro ao trocar senha");
 });
 
-setSyncStatus((apiUrl && sessionToken) ? "syncing" : "unconfigured");
-startSyncLoop();
+setSyncStatus("unconfigured");
 </script>
 </body>
 </html>
