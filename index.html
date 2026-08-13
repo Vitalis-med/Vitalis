@@ -972,6 +972,7 @@
     <div class="nav-eyebrow profiles">Perfil ativo</div>
     <div class="profile-switch" id="profileSwitcher"></div>
     <div class="profile-current" id="profileCurrentLabel">—</div>
+    <button class="btn ghost" id="btnEditProfiles" style="font-size:10px; padding:4px 0; margin-top:2px;">⚙ Gerenciar perfis</button>
   </div>
 </aside>
 
@@ -1055,6 +1056,9 @@
       <div>
         <h1>Cronograma semanal</h1>
         <p>Terceiro semestre 2026-2 · aulas oficiais + rotina pessoal · clique numa célula ou arraste uma tarefa pra agendar</p>
+      </div>
+      <div class="head-actions">
+        <button class="btn sm" id="btnEditTags">⚙ Matérias</button>
       </div>
     </header>
     <div class="task-toolbar" style="margin-bottom:14px;">
@@ -1168,6 +1172,7 @@
         <p>Notas por matéria, com média ponderada e status de aprovação calculados sozinhos</p>
       </div>
       <div class="head-actions">
+        <button class="btn sm" id="btnEditMinApproval">⚙ Nota mínima</button>
         <button class="btn primary" id="btnAddSubjectGrade">+ Matéria</button>
       </div>
     </header>
@@ -1192,6 +1197,7 @@
         <p>Prioridade, categoria, prazo e responsável — cada um vê as próprias por padrão</p>
       </div>
       <div class="head-actions">
+        <button class="btn sm" id="btnEditCats">⚙ Categorias</button>
         <button class="btn primary" id="btnNewTask">+ Nova tarefa</button>
       </div>
     </header>
@@ -1242,7 +1248,7 @@
           <div id="deadlinesList"></div>
         </div>
         <div class="side-card">
-          <h4>Hábitos — <span id="habitsWidgetOwner"></span></h4>
+          <div class="hoje-card-head" style="margin:0;"><h4 style="margin:0;">Hábitos — <span id="habitsWidgetOwner"></span></h4><button class="btn ghost" id="btnEditHabits" style="font-size:11px; padding:0;">⚙</button></div>
           <div id="habitsList"></div>
         </div>
       </div>
@@ -1257,6 +1263,7 @@
         <p>Receitas, despesas e saldo do mês — clique nos campos da tabela para editar direto</p>
       </div>
       <div class="head-actions">
+        <button class="btn sm" id="btnEditFinCats">⚙ Categorias</button>
         <button class="btn primary" id="btnNewTx">+ Nova transação</button>
       </div>
     </header>
@@ -1355,82 +1362,11 @@
     <header class="page-head">
       <div>
         <h1>Configurações</h1>
-        <p>Perfis, matérias, categorias e hábitos — tudo editável, nada preso no código</p>
+        <p>Perfis, sincronização e dados do painel</p>
       </div>
     </header>
 
     <div class="config-grid">
-      <div class="side-card">
-        <h4>Perfis</h4>
-        <p class="hint">Cada perfil tem as próprias tarefas e hábitos, pra não misturar.</p>
-        <div id="usersList"></div>
-        <div class="crud-add-row">
-          <input type="color" id="newUserColor" value="#2F6F63">
-          <input type="text" id="newUserName" placeholder="Nome do novo perfil">
-          <button class="btn sm primary" id="btnAddUser">Adicionar</button>
-        </div>
-      </div>
-
-      <div class="side-card">
-        <h4>Matérias &amp; atividades do cronograma</h4>
-        <p class="hint">Usadas nas células do cronograma e no seletor de matéria das anotações.</p>
-        <div id="tagsList"></div>
-        <div class="crud-add-row">
-          <input type="color" id="newTagColor" value="#2F6F63">
-          <input type="text" id="newTagName" placeholder="Nova matéria ou atividade">
-          <button class="btn sm primary" id="btnAddTag">Adicionar</button>
-        </div>
-      </div>
-
-      <div class="side-card">
-        <h4>Categorias de tarefas</h4>
-        <p class="hint">Aparecem no quadro Kanban e nos filtros de tarefas.</p>
-        <div id="catsList"></div>
-        <div class="crud-add-row">
-          <input type="color" id="newCatColor" value="#2F6F63">
-          <input type="text" id="newCatName" placeholder="Nova categoria">
-          <button class="btn sm primary" id="btnAddCat">Adicionar</button>
-        </div>
-      </div>
-
-      <div class="side-card">
-        <h4>Categorias financeiras</h4>
-        <p class="hint">Cada categoria é de receita ou de despesa. Usadas em Financeiro.</p>
-        <div id="finCatsList"></div>
-        <div class="crud-add-row">
-          <input type="color" id="newFinCatColor" value="#2F6F63">
-          <input type="text" id="newFinCatName" placeholder="Nova categoria financeira">
-          <select id="newFinCatType" style="padding:9px 8px; border:1px solid var(--border-strong); border-radius:7px; font-size:12px;">
-            <option value="despesa">Despesa</option>
-            <option value="receita">Receita</option>
-          </select>
-          <button class="btn sm primary" id="btnAddFinCat">Adicionar</button>
-        </div>
-        <div class="crud-add-row" style="margin-top:14px;">
-          <label style="margin:0; font-size:10.5px; color:var(--text-faint); text-transform:uppercase; font-weight:700;">Símbolo da moeda</label>
-          <input type="text" id="currencySymbolInput" maxlength="4" style="max-width:70px; padding:8px 10px; border:1px solid var(--border-strong); border-radius:7px; font-family:'IBM Plex Mono',monospace;">
-        </div>
-      </div>
-
-      <div class="side-card">
-        <h4>Hábitos de <span id="habitsForUser"></span></h4>
-        <p class="hint">Cada perfil administra os próprios hábitos.</p>
-        <div id="habitsSettingsList"></div>
-        <div class="crud-add-row">
-          <input type="text" id="newHabitName" placeholder="Novo hábito">
-          <button class="btn sm primary" id="btnAddHabit">Adicionar</button>
-        </div>
-      </div>
-
-      <div class="side-card">
-        <h4>Boletim</h4>
-        <p class="hint">Nota mínima pra ser considerado aprovado (usada no cálculo automático das médias).</p>
-        <div class="crud-add-row" style="margin-top:0; padding-top:0; border-top:none;">
-          <input type="text" id="minApprovalInput" placeholder="60" inputmode="decimal" style="max-width:100px;">
-          <button class="btn sm primary" id="btnSaveMinApproval">Salvar</button>
-        </div>
-      </div>
-
       <div class="side-card" style="grid-column:1/-1;">
         <h4>Sincronização — Google Sheets</h4>
         <p class="hint">URL da API configurada no login. Você só precisa mexer aqui se for trocar de planilha.</p>
@@ -1657,6 +1593,97 @@
         <button class="btn primary" id="txCreate">Adicionar</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ===== Modal: nota mínima do boletim ===== -->
+<div class="overlay" id="overlayMinApproval">
+  <div class="modal sm">
+    <h3>Nota mínima de aprovação</h3>
+    <div class="meta-line">Usada no cálculo automático das médias do Boletim</div>
+    <label>Nota mínima (0-100)</label>
+    <input type="text" id="minApprovalInput" placeholder="60" inputmode="decimal">
+    <div class="modal-actions"><div></div><div class="right"><button class="btn" id="minApprovalClose">Cancelar</button><button class="btn primary" id="btnSaveMinApproval">Salvar</button></div></div>
+  </div>
+</div>
+
+<!-- ===== Modal: gerenciar perfis ===== -->
+<div class="overlay" id="overlayProfilesEdit">
+  <div class="modal sm">
+    <h3>Perfis</h3>
+    <div class="meta-line">Cada perfil tem as próprias tarefas e hábitos, pra não misturar</div>
+    <div id="usersList"></div>
+    <div class="crud-add-row">
+      <input type="color" id="newUserColor" value="#2F6F63">
+      <input type="text" id="newUserName" placeholder="Nome do novo perfil">
+      <button class="btn sm primary" id="btnAddUser">Adicionar</button>
+    </div>
+    <div class="modal-actions"><div></div><div class="right"><button class="btn" id="profilesEditClose">Fechar</button></div></div>
+  </div>
+</div>
+
+<!-- ===== Modal: editar matérias (cronograma) ===== -->
+<div class="overlay" id="overlayTagsEdit">
+  <div class="modal sm">
+    <h3>Matérias &amp; atividades</h3>
+    <div class="meta-line">Usadas nas células do cronograma e no seletor de matéria das anotações</div>
+    <div id="tagsList"></div>
+    <div class="crud-add-row">
+      <input type="color" id="newTagColor" value="#2F6F63">
+      <input type="text" id="newTagName" placeholder="Nova matéria ou atividade">
+      <button class="btn sm primary" id="btnAddTag">Adicionar</button>
+    </div>
+    <div class="modal-actions"><div></div><div class="right"><button class="btn" id="tagsEditClose">Fechar</button></div></div>
+  </div>
+</div>
+
+<!-- ===== Modal: editar categorias de tarefas ===== -->
+<div class="overlay" id="overlayCatsEdit">
+  <div class="modal sm">
+    <h3>Categorias de tarefas</h3>
+    <div class="meta-line">Aparecem no quadro Kanban e nos filtros de tarefas</div>
+    <div id="catsList"></div>
+    <div class="crud-add-row">
+      <input type="color" id="newCatColor" value="#2F6F63">
+      <input type="text" id="newCatName" placeholder="Nova categoria">
+      <button class="btn sm primary" id="btnAddCat">Adicionar</button>
+    </div>
+    <div class="modal-actions"><div></div><div class="right"><button class="btn" id="catsEditClose">Fechar</button></div></div>
+  </div>
+</div>
+
+<!-- ===== Modal: editar categorias financeiras ===== -->
+<div class="overlay" id="overlayFinCatsEdit">
+  <div class="modal sm">
+    <h3>Categorias financeiras</h3>
+    <div class="meta-line">Cada categoria é de receita ou de despesa</div>
+    <div id="finCatsList"></div>
+    <div class="crud-add-row">
+      <input type="color" id="newFinCatColor" value="#2F6F63">
+      <input type="text" id="newFinCatName" placeholder="Nova categoria financeira">
+      <select id="newFinCatType" style="padding:9px 8px; border:1px solid var(--border-strong); border-radius:7px; font-size:12px;">
+        <option value="despesa">Despesa</option>
+        <option value="receita">Receita</option>
+      </select>
+      <button class="btn sm primary" id="btnAddFinCat">Adicionar</button>
+    </div>
+    <label>Símbolo da moeda</label>
+    <input type="text" id="currencySymbolInput" maxlength="4" style="max-width:100px;">
+    <div class="modal-actions"><div></div><div class="right"><button class="btn" id="finCatsEditClose">Fechar</button></div></div>
+  </div>
+</div>
+
+<!-- ===== Modal: editar hábitos ===== -->
+<div class="overlay" id="overlayHabitsEdit">
+  <div class="modal sm">
+    <h3>Hábitos de <span id="habitsForUser"></span></h3>
+    <div class="meta-line">Cada perfil administra os próprios hábitos</div>
+    <div id="habitsSettingsList"></div>
+    <div class="crud-add-row">
+      <input type="text" id="newHabitName" placeholder="Novo hábito">
+      <button class="btn sm primary" id="btnAddHabit">Adicionar</button>
+    </div>
+    <div class="modal-actions"><div></div><div class="right"><button class="btn" id="habitsEditClose">Fechar</button></div></div>
   </div>
 </div>
 
@@ -3629,6 +3656,21 @@ function renderSettings(){
   renderUsersSettings(); renderTagsSettings(); renderCatsSettings(); renderFinCatsSettings(); renderHabitsSettings();
 }
 
+/* ---- modais contextuais de edição (abertos direto de cada aba) ---- */
+function wireEditModal_(btnId, overlayId, closeId, renderFn){
+  document.getElementById(btnId).addEventListener("click", ()=>{
+    renderFn();
+    document.getElementById(overlayId).classList.add("open");
+  });
+  document.getElementById(closeId).addEventListener("click", ()=> document.getElementById(overlayId).classList.remove("open"));
+  document.getElementById(overlayId).addEventListener("click", e=>{ if(e.target.id===overlayId) document.getElementById(overlayId).classList.remove("open"); });
+}
+wireEditModal_("btnEditTags", "overlayTagsEdit", "tagsEditClose", renderTagsSettings);
+wireEditModal_("btnEditCats", "overlayCatsEdit", "catsEditClose", renderCatsSettings);
+wireEditModal_("btnEditFinCats", "overlayFinCatsEdit", "finCatsEditClose", renderFinCatsSettings);
+wireEditModal_("btnEditHabits", "overlayHabitsEdit", "habitsEditClose", renderHabitsSettings);
+wireEditModal_("btnEditProfiles", "overlayProfilesEdit", "profilesEditClose", renderUsersSettings);
+
 /* ---- adicionar itens ---- */
 function addTag(){
   const name = document.getElementById("newTagName").value.trim();
@@ -4542,11 +4584,17 @@ document.getElementById("btnSyncNow").addEventListener("click", ()=>{
   if(!apiUrl){ toast("Cola a URL da API primeiro"); return; }
   syncNow();
 });
-document.getElementById("minApprovalInput").value = minApproval;
+document.getElementById("btnEditMinApproval").addEventListener("click", ()=>{
+  document.getElementById("minApprovalInput").value = minApproval;
+  document.getElementById("overlayMinApproval").classList.add("open");
+});
+document.getElementById("minApprovalClose").addEventListener("click", ()=> document.getElementById("overlayMinApproval").classList.remove("open"));
+document.getElementById("overlayMinApproval").addEventListener("click", e=>{ if(e.target.id==="overlayMinApproval") document.getElementById("overlayMinApproval").classList.remove("open"); });
 document.getElementById("btnSaveMinApproval").addEventListener("click", ()=>{
   const v = Number(document.getElementById("minApprovalInput").value.replace(",",".")) || 60;
   minApproval = v;
   save(MIN_APPROVAL_KEY, minApproval);
+  document.getElementById("overlayMinApproval").classList.remove("open");
   toast("Nota mínima atualizada");
   if(document.getElementById("boletim").classList.contains("active")) renderBoletim();
 });
