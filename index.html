@@ -4601,7 +4601,7 @@ document.getElementById("btnLogin").addEventListener("click", async ()=>{
     }
   }catch(err){
     statusEl.textContent = "";
-    errEl.textContent = "Sem conexão com a API — confere a URL";
+    errEl.textContent = "Erro de conexão: " + (err && err.message ? err.message : String(err));
   }
 });
 document.getElementById("loginPassword").addEventListener("keydown", e=>{ if(e.key==="Enter") document.getElementById("btnLogin").click(); });
