@@ -278,6 +278,8 @@
   /* ---- Schedule ---- */
   .grid-card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:4px; overflow-x:auto;}
   .cronograma-layout{display:flex; gap:16px; align-items:flex-start;}
+  .sched-scroll-wrap{position:relative; flex:1; min-width:0;}
+  .sched-scroll-wrap::after{content:""; position:absolute; top:4px; right:0; bottom:4px; width:28px; background:linear-gradient(90deg, transparent, var(--card) 85%); pointer-events:none; border-radius:0 var(--radius-lg) var(--radius-lg) 0;}
   .sched-side{width:230px; flex-shrink:0;}
   .drag-chip{
     background:var(--card-2); border:1px solid var(--border); border-radius:var(--radius-sm);
@@ -454,6 +456,8 @@
   .login-box input:focus{outline:2px solid var(--primary); outline-offset:1px; border-color:var(--primary);}
   .login-error{font-size:12px; color:var(--now); margin-top:12px; min-height:16px;}
   .login-status{font-size:11px; color:var(--text-faint); margin-top:6px; font-family:'IBM Plex Mono',monospace;}
+  .login-link{display:block; text-align:center; font-size:12px; color:var(--text-soft); margin-top:16px; text-decoration:none;}
+  .login-link:hover{color:var(--primary); text-decoration:underline;}
   .admin-acc-row{display:flex; align-items:center; gap:12px; padding:9px 4px; border-bottom:1px solid var(--border); font-size:12.5px;}
   .admin-acc-row:last-child{border-bottom:none;}
   .admin-acc-row .aa-name{flex:1;}
@@ -517,6 +521,12 @@
   .hoje-now-info .n-label{font-family:'Fraunces',serif; font-size:16px; font-weight:600; color:#F0F2F4; line-height:1.3;}
   .hoje-now-info .n-time{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-soft); margin-top:2px;}
   .hoje-empty-slot{font-size:12.5px; color:var(--text-faint); font-style:italic;}
+  .hoje-freeday{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; height:100%; min-height:220px; gap:10px; color:var(--text-soft); font-size:13px;}
+  .hoje-freeday-icon{font-size:26px; opacity:.6;}
+  .hoje-freeday-link{color:var(--primary); font-size:11.5px; text-decoration:none; margin-top:4px; cursor:pointer;}
+  .hoje-freeday-link:hover{text-decoration:underline;}
+  .sched-empty-banner{background:var(--primary-soft); border:1px solid var(--primary); border-radius:var(--radius-md); padding:12px 16px; margin-bottom:14px; font-size:13px; color:var(--text);}
+  .sched-empty-banner b{color:var(--primary);}
 
   .hoje-area-progress{display:flex; flex-direction:column; align-items:center;}
   .hoje-ring-wrap{position:relative; width:110px; height:110px; margin:4px auto 0;}
@@ -721,6 +731,10 @@
   .fin-editable:hover{border-color:var(--border-strong); background:var(--card-2);}
   .fin-editable:focus{outline:2px solid var(--primary); outline-offset:0; border-color:var(--primary); background:var(--card-2);}
   select.fin-editable{cursor:pointer;}
+  .fin-date-cell{position:relative;}
+  .fin-date-display{display:block; padding:4px 6px; font-size:12.5px; font-family:'IBM Plex Mono',monospace; cursor:pointer; border-radius:var(--radius-sm); border:1px solid transparent;}
+  .fin-date-display:hover{border-color:var(--border-strong); background:var(--card-2);}
+  .fin-date-cell .fin-date-input{position:absolute; inset:0; opacity:0; pointer-events:none; width:100%; height:100%;}
   input.fin-amount-input{font-family:'IBM Plex Mono',monospace; text-align:right;}
   .fin-recur-actions{display:flex; gap:4px;}
   .fin-recur-actions button{background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:13px; padding:2px 4px;}
@@ -732,9 +746,9 @@
   .water-tracker{display:flex; align-items:center; gap:8px;}
   #waterCups{display:flex; gap:4px; flex-wrap:wrap;}
   .water-tracker .wt-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); font-weight:700; margin-right:2px; font-family:'IBM Plex Mono',monospace;}
-  .cup-btn{width:22px; height:22px; border-radius:6px; border:1.5px solid var(--border-strong); background:var(--card); cursor:pointer; font-size:12px; display:inline-flex; align-items:center; justify-content:center;}
-  .cup-btn:hover{border-color:#4AA8D8;}
-  .cup-btn.filled{background:rgba(74,168,216,.15); border-color:#4AA8D8;}
+  .cup-btn{width:22px; height:22px; border-radius:6px; border:1.5px solid var(--border-strong); background:var(--card); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:#3A4048;}
+  .cup-btn:hover{border-color:#4AA8D8; color:#5A6572;}
+  .cup-btn.filled{background:#4AA8D8; border-color:#4AA8D8; color:#0A1F2E; box-shadow:0 0 8px rgba(74,168,216,.5);}
   .diet-layout{display:grid; grid-template-columns:1fr 280px; gap:18px; align-items:start;}
   .diet-meals{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
   .meal-card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-md); padding:14px; box-shadow:var(--shadow-card);}
@@ -856,16 +870,39 @@
   <div class="login-box">
     <img class="login-logo" src="vitalis-logo.png" alt="Vitalis">
     <h1>Vitalis</h1>
-    <p class="login-sub">Entre com a conta que o administrador criou pra você</p>
 
-    <label>Email</label>
-    <input type="email" id="loginUsername" autocomplete="username" placeholder="seu@email.com">
-    <label>Senha</label>
-    <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••••">
+    <div id="loginViewNormal">
+      <p class="login-sub">Entre com a conta que o administrador criou pra você</p>
+      <label>Email</label>
+      <input type="email" id="loginUsername" autocomplete="username" placeholder="seu@email.com">
+      <label>Senha</label>
+      <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••••">
+      <button class="btn primary" id="btnLogin" style="width:100%; justify-content:center; margin-top:14px;">Entrar</button>
+      <div class="login-error" id="loginError"></div>
+      <div class="login-status" id="loginStatus"></div>
+      <a href="#" class="login-link" id="linkForgotPassword">Esqueci minha senha</a>
+    </div>
 
-    <button class="btn primary" id="btnLogin" style="width:100%; justify-content:center; margin-top:14px;">Entrar</button>
-    <div class="login-error" id="loginError"></div>
-    <div class="login-status" id="loginStatus"></div>
+    <div id="loginViewForgot" style="display:none;">
+      <p class="login-sub">Digita seu email — a gente manda um link pra você criar uma senha nova.</p>
+      <label>Email</label>
+      <input type="email" id="forgotEmail" autocomplete="username" placeholder="seu@email.com">
+      <button class="btn primary" id="btnSendReset" style="width:100%; justify-content:center; margin-top:14px;">Enviar link de recuperação</button>
+      <div class="login-error" id="forgotError"></div>
+      <div class="login-status" id="forgotStatus"></div>
+      <a href="#" class="login-link" id="linkBackToLogin">← Voltar pro login</a>
+    </div>
+
+    <div id="loginViewRecovery" style="display:none;">
+      <p class="login-sub">Cria sua nova senha.</p>
+      <label>Nova senha</label>
+      <input type="password" id="recoveryPassword" placeholder="mínimo 6 caracteres">
+      <label>Confirma a nova senha</label>
+      <input type="password" id="recoveryPassword2" placeholder="mínimo 6 caracteres">
+      <button class="btn primary" id="btnSetNewPassword" style="width:100%; justify-content:center; margin-top:14px;">Salvar nova senha</button>
+      <div class="login-error" id="recoveryError"></div>
+      <div class="login-status" id="recoveryStatus"></div>
+    </div>
   </div>
 </div>
 
@@ -995,11 +1032,11 @@
     </div>
 
     <div class="hoje-grid">
-      <div class="hoje-card hoje-area-now">
+      <div class="hoje-card hoje-area-now" id="hojeNowCard">
         <h4>Agora</h4>
         <div id="hojeNowBlock"></div>
-        <div class="hoje-divider"></div>
-        <h4>A seguir</h4>
+        <div class="hoje-divider" id="hojeNowDivider"></div>
+        <h4 id="hojeNextLabel">A seguir</h4>
         <div id="hojeNextBlock"></div>
       </div>
 
@@ -1063,13 +1100,18 @@
         <div class="chip-row" id="schedOwnerFilters"></div>
       </div>
     </div>
+    <div class="sched-empty-banner" id="schedEmptyBanner" style="display:none;">
+      <b>Seu cronograma está em branco.</b> Clica em qualquer célula da grade pra adicionar sua primeira aula ou compromisso — ou arrasta uma tarefa da lista aqui do lado.
+    </div>
     <div class="cronograma-layout">
+      <div class="sched-scroll-wrap">
       <div class="grid-card" style="flex:1; min-width:0;">
         <table class="sched" id="schedTable">
           <thead><tr id="schedHead"><th class="time-col">Hora</th></tr></thead>
           <tbody id="schedBody"></tbody>
         </table>
         <div class="legend" id="legend"></div>
+      </div>
       </div>
       <div class="sched-side">
         <div class="side-card">
@@ -1182,6 +1224,10 @@
 
     <div class="stat-row" id="boletimStats"></div>
 
+    <div id="boletimChartCard" class="side-card" style="display:none; margin-bottom:16px;">
+      <h4>Média por matéria</h4>
+      <div id="boletimChart"></div>
+    </div>
     <div id="boletimList"></div>
   </section>
 
@@ -1239,6 +1285,10 @@
       </div>
 
       <div class="tasks-side">
+        <div class="side-card">
+          <h4>Concluídas — últimos 7 dias</h4>
+          <div id="taskTrendChart"></div>
+        </div>
         <div class="side-card">
           <h4>Próximos prazos</h4>
           <div id="deadlinesList"></div>
@@ -1304,6 +1354,10 @@
         </div>
       </div>
       <div class="tasks-side">
+        <div class="side-card">
+          <h4>Tendência — últimos 6 meses</h4>
+          <div id="finTrendChart"></div>
+        </div>
         <div class="side-card">
           <h4>Por categoria (despesas)</h4>
           <div id="finByCategory"></div>
@@ -1796,11 +1850,13 @@ function durationLabel(quarters){
 const JSDAY_TO_INDEX = {1:0,2:1,3:2,4:3,5:4,6:5,0:6};
 const LUNCH_DAYS_HOUR = {"0":"12:00","1":"12:00","2":"12:00","3":"12:00","4":"12:00"};
 const PRIORITIES = { alta:{label:"Alta", hex:"#C0483C"}, media:{label:"Média", hex:"#B08544"}, baixa:{label:"Baixa", hex:"#5B7FA6"} };
-const HABITS_DEFAULT = ["Água", "Sono 7h+", "Exercício", "Revisão do dia"];
+const HABITS_DEFAULT = ["Hidratação", "Sono 7h+", "Exercício", "Revisão do dia"];
 const SRS_INTERVALS = [1,3,7,14,30,90];
+const MESES_ABREV = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const SRS_LOG_KEY = "painel_estudos_srs_log_v1";
 const GRADES_KEY = "vitalis_boletim_v1";
 const RV_STATS_KEY = "vitalis_revalida_stats_v1";
+const RV_SRS_KEY = "vitalis_revalida_srs_v1";
 const MIN_APPROVAL_KEY = "vitalis_nota_minima_v1";
 const HABIT_DAY_LABELS = ["S","T","Q","Q","S","S","D"];
 const OUTRO_TAG = {id:"outro", name:"Outro / livre", hex:"#8A94A0"};
@@ -2019,6 +2075,34 @@ function mondayOfWeek(d){
   return date;
 }
 function escapeHtml(s){ return (s||"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+// gráfico de barras simples em SVG — sem depender de biblioteca externa.
+// bars: [{label, value, positive?}]. Se algum valor for negativo, a barra desce a partir do eixo.
+function miniBarChart(bars, opts){
+  opts = opts || {};
+  const w = opts.width || 520, h = opts.height || 120;
+  const padL = 4, padR = 4, padTop = 10, padBottom = 22;
+  const axisY = h - padBottom;
+  const plotH = axisY - padTop;
+  const barW = (w - padL - padR) / bars.length;
+  const maxAbs = Math.max(1, ...bars.map(b=>Math.abs(b.value)));
+  const hasNeg = bars.some(b=>b.value<0);
+  const zeroY = hasNeg ? padTop + plotH/2 : axisY;
+  const halfH = hasNeg ? plotH/2 : plotH;
+  let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none">`;
+  svg += `<line x1="0" y1="${zeroY}" x2="${w}" y2="${zeroY}" stroke="var(--border)" stroke-width="1"/>`;
+  bars.forEach((b,i)=>{
+    const x = padL + i*barW;
+    const bh = Math.max(2, (Math.abs(b.value)/maxAbs) * halfH);
+    const y = b.value>=0 ? zeroY-bh : zeroY;
+    const color = b.color || (b.value>=0 ? "var(--primary)" : "var(--now)");
+    const bw = Math.max(4, barW*0.55);
+    svg += `<rect x="${(x+barW/2-bw/2).toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${color}"><title>${escapeHtml(b.label)}: ${escapeHtml(String(b.value))}</title></rect>`;
+    svg += `<text x="${(x+barW/2).toFixed(1)}" y="${h-8}" font-size="9" fill="var(--text-faint)" text-anchor="middle" font-family="IBM Plex Mono, monospace">${escapeHtml(b.label)}</text>`;
+  });
+  svg += "</svg>";
+  return svg;
+}
 function formatDate(d){ if(!d) return ""; const p=d.split("-"); return p.length===3 ? p[2]+"/"+p[1]+"/"+p[0] : d; }
 function formatShortDate(d){ if(!d) return ""; const [y,m,day]=d.split("-"); return day+"/"+m; }
 
@@ -2079,6 +2163,8 @@ function renderBody(){
   const body = document.getElementById("schedBody");
   body.innerHTML = "";
   const schedule = getSchedule(scheduleViewUserId);
+  const banner = document.getElementById("schedEmptyBanner");
+  if(banner) banner.style.display = Object.keys(schedule).length===0 ? "block" : "none";
   const ti = todayIndex();
   const now = new Date();
   const nowMinutes = now.getHours()*60 + now.getMinutes();
@@ -2633,6 +2719,7 @@ function rvSearch(query){
   });
 }
 let rvStats = load(RV_STATS_KEY, {});
+let rvSrs = load(RV_SRS_KEY, {}); // questões que você errou, entram no ciclo de revisão espaçada
 function rvUserStats(uidP){ if(!rvStats[uidP]) rvStats[uidP]={}; return rvStats[uidP]; }
 function rvAltsHtml(rv, state){
   return Object.entries(rv.alts).map(([letra,txt])=>{
@@ -2665,8 +2752,14 @@ function wireRvCards(container, query){
         const letra = btn.dataset.letra;
         const stats = rvUserStats(currentUserId);
         if(stats[rv.num]) return;
-        stats[rv.num] = {letter:letra, correct: letra===rv.gabarito};
+        const correct = letra===rv.gabarito;
+        stats[rv.num] = {letter:letra, correct};
         save(RV_STATS_KEY, rvStats);
+        if(!correct){
+          // errou: entra (ou reinicia) no ciclo de revisão espaçada
+          rvSrs[rv.num] = {interval:0, next:addDaysISO(todayISO(), SRS_INTERVALS[0]), lastReview:null};
+          save(RV_SRS_KEY, rvSrs);
+        }
         card.outerHTML = rvCardHtml(rv, query||"");
         wireRvCards(container, query);
         renderRvStatsBar();
@@ -2809,6 +2902,17 @@ function renderBoletim(){
   const wrap = document.getElementById("boletimList");
   if(!wrap) return;
   const subjects = ensureBoletim(boletimViewUserId);
+
+  const chartCard = document.getElementById("boletimChartCard");
+  const withGrades = subjects.filter(s=>subjectAverage(s)!==null);
+  if(withGrades.length>0){
+    chartCard.style.display = "block";
+    const bars = withGrades.map(s=>({label:s.name.slice(0,6), value:Math.round(subjectAverage(s)), color: subjectAverage(s)>=minApproval ? "var(--primary)" : "var(--now)"}));
+    document.getElementById("boletimChart").innerHTML = miniBarChart(bars, {height:110});
+  }else{
+    chartCard.style.display = "none";
+  }
+
   if(subjects.length===0){
     wrap.innerHTML = '<div class="empty-state"><h3>Nenhuma matéria no boletim</h3><p>Clica em "+ Matéria" pra começar a lançar notas.</p></div>';
     return;
@@ -2966,36 +3070,104 @@ document.getElementById("giSave").addEventListener("click", ()=>{
 function renderRevisao(){
   const today = todayISO();
   const activeNotes = notes.filter(n=>n.srs && n.srs.enabled);
-  const dueNotes = activeNotes.filter(n=>n.srs.next <= today);
-  document.getElementById("srsDueCount").textContent = dueNotes.length;
-  document.getElementById("srsActiveCount").textContent = activeNotes.length;
+  const dueNotes = activeNotes.filter(n=>n.srs.next <= today).map(n=>({type:"note", item:n, next:n.srs.next, interval:n.srs.interval}));
+
+  const rvDueNums = Object.keys(rvSrs).filter(num=> rvSrs[num].next <= today);
+  const dueRv = rvDueNums.map(num=>{
+    const rv = REVALIDA_QUESTIONS.find(x=>x.num===Number(num));
+    return rv ? {type:"revalida", item:rv, next:rvSrs[num].next, interval:rvSrs[num].interval} : null;
+  }).filter(Boolean);
+
+  const dueAll = dueNotes.concat(dueRv);
+  const activeCount = activeNotes.length + Object.keys(rvSrs).length;
+
+  document.getElementById("srsDueCount").textContent = dueAll.length;
+  document.getElementById("srsActiveCount").textContent = activeCount;
   document.getElementById("srsStreak").textContent = computeSrsStreak();
 
   const wrap = document.getElementById("srsDueList");
-  if(dueNotes.length===0){
-    wrap.innerHTML = '<div class="empty-state"><h3>Tudo revisado por hoje</h3><p>'+(activeNotes.length ? "Volta amanhã pra continuar o ciclo." : 'Marca uma anotação com "Revisão espaçada" no editor pra começar.')+'</p></div>';
+  if(dueAll.length===0){
+    wrap.innerHTML = '<div class="empty-state"><h3>Tudo revisado por hoje</h3><p>'+(activeCount ? "Volta amanhã pra continuar o ciclo." : 'Marca uma anotação com "Revisão espaçada" no editor, ou erra uma questão do Revalida, pra começar.')+'</p></div>';
     return;
   }
   wrap.innerHTML = "";
-  dueNotes.sort((a,b)=>(a.srs.next||"").localeCompare(b.srs.next||"")).forEach(n=>{
+  dueAll.sort((a,b)=>(a.next||"").localeCompare(b.next||"")).forEach(entry=>{
     const card = document.createElement("div");
     card.className = "srs-card";
-    card.innerHTML = `
-      <div class="srs-top">
-        <span class="nc-subject"><i style="background:${tagColor(n.subject)}"></i>${escapeHtml(n.subject||"Geral")}</span>
-        <span class="srs-interval">intervalo: ${SRS_INTERVALS[n.srs.interval]}d</span>
-      </div>
-      <h3>${escapeHtml(n.title||"(sem título)")}</h3>
-      <div class="srs-actions">
-        <button class="btn warn" data-act="forgot">Esqueci</button>
-        <button class="btn good" data-act="remembered">Lembrei bem</button>
-      </div>
-    `;
-    card.querySelector("h3").addEventListener("click", ()=>{ document.querySelector('.nav-item[data-tab="notas"]').click(); openEditor(n.id); });
-    card.querySelector('[data-act="forgot"]').addEventListener("click", ()=> srsReview(n.id, false));
-    card.querySelector('[data-act="remembered"]').addEventListener("click", ()=> srsReview(n.id, true));
+    if(entry.type==="note"){
+      const n = entry.item;
+      card.innerHTML = `
+        <div class="srs-top">
+          <span class="nc-subject"><i style="background:${tagColor(n.subject)}"></i>${escapeHtml(n.subject||"Geral")}</span>
+          <span class="srs-interval">intervalo: ${SRS_INTERVALS[entry.interval]}d</span>
+        </div>
+        <h3>${escapeHtml(n.title||"(sem título)")}</h3>
+        <div class="srs-actions">
+          <button class="btn warn" data-act="forgot">Esqueci</button>
+          <button class="btn good" data-act="remembered">Lembrei bem</button>
+        </div>
+      `;
+      card.querySelector("h3").addEventListener("click", ()=>{ document.querySelector('.nav-item[data-tab="notas"]').click(); openEditor(n.id); });
+      card.querySelector('[data-act="forgot"]').addEventListener("click", ()=> srsReview(n.id, false));
+      card.querySelector('[data-act="remembered"]').addEventListener("click", ()=> srsReview(n.id, true));
+    }else{
+      const rv = entry.item;
+      card.innerHTML = `
+        <div class="srs-top">
+          <span class="nc-subject"><i style="background:${rvAreaColor(rv.area)}"></i>${escapeHtml(rv.area)} · Revalida Q${rv.num}</span>
+          <span class="srs-interval">intervalo: ${SRS_INTERVALS[entry.interval]}d</span>
+        </div>
+        <h3>${escapeHtml(rv.enunciado.slice(0,90))}${rv.enunciado.length>90?"…":""}</h3>
+        <div class="srs-actions">
+          <button class="btn warn" data-act="forgot">Esqueci</button>
+          <button class="btn good" data-act="remembered">Lembrei bem</button>
+        </div>
+      `;
+      card.querySelector("h3").addEventListener("click", ()=>{
+        document.querySelector('.nav-item[data-tab="revalida"]').click();
+        setTimeout(()=>{
+          document.getElementById("revalidaSearch").value = "";
+          document.getElementById("revalidaResults").innerHTML = rvCardHtml(rv,"");
+          wireRvCards(document.getElementById("revalidaResults"), "");
+          renderRvStatsBar();
+          document.getElementById("revalidaMeta").textContent = "Mostrando Q"+rv.num+" a partir da revisão espaçada";
+        }, 60);
+      });
+      card.querySelector('[data-act="forgot"]').addEventListener("click", ()=> rvSrsReview(rv.num, false));
+      card.querySelector('[data-act="remembered"]').addEventListener("click", ()=> rvSrsReview(rv.num, true));
+    }
     wrap.appendChild(card);
   });
+}
+function rvAreaColor(area){
+  // cor estável derivada do nome da área, só pra dar uma pista visual (sem precisar cadastrar cor por área)
+  let hash = 0;
+  for(let i=0;i<area.length;i++) hash = area.charCodeAt(i) + ((hash<<5)-hash);
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 45%, 55%)`;
+}
+function rvSrsReview(num, remembered){
+  const entry = rvSrs[num];
+  if(!entry) return;
+  if(remembered){
+    entry.interval = Math.min(entry.interval+1, SRS_INTERVALS.length-1);
+    entry.next = addDaysISO(todayISO(), SRS_INTERVALS[entry.interval]);
+    entry.lastReview = todayISO();
+    // dominou (chegou no maior intervalo e lembrou de novo): sai da fila
+    if(entry.interval === SRS_INTERVALS.length-1 && entry.lastReview){
+      // mantém mais uma rodada no intervalo máximo antes de considerar "dominado" — não remove ainda
+    }
+  }else{
+    entry.interval = 0;
+    entry.next = addDaysISO(todayISO(), SRS_INTERVALS[0]);
+    entry.lastReview = todayISO();
+  }
+  const log = load(SRS_LOG_KEY, {});
+  log[todayISO()] = true;
+  save(SRS_LOG_KEY, log);
+  save(RV_SRS_KEY, rvSrs);
+  renderRevisao();
+  toast(remembered ? "Revisado — próxima em "+SRS_INTERVALS[entry.interval]+" dia(s)" : "Sem problema — volta amanhã");
 }
 function srsReview(noteId, remembered){
   const n = notes.find(x=>x.id===noteId);
@@ -3146,6 +3318,23 @@ function renderTasks(){
   renderStats(items);
   renderDeadlines(items);
   renderHabits();
+  renderTaskTrend();
+}
+function renderTaskTrend(){
+  const wrap = document.getElementById("taskTrendChart");
+  if(!wrap) return;
+  const days = [];
+  for(let i=6;i>=0;i--) days.push(addDaysISO(todayISO(), -i));
+  const bars = days.map(iso=>{
+    const count = tasks.filter(t=> t.owner===currentUserId && t.status==="done" && t.doneAt && t.doneAt.slice(0,10)===iso).length;
+    const d = new Date(iso+"T12:00:00");
+    return {label: HABIT_DAY_LABELS[(d.getDay()+6)%7], value: count, color:"var(--primary)"};
+  });
+  if(bars.every(b=>b.value===0)){
+    wrap.innerHTML = '<div class="hoje-empty-mini">Nenhuma tarefa concluída nos últimos 7 dias</div>';
+    return;
+  }
+  wrap.innerHTML = miniBarChart(bars, {height:90});
 }
 function renderStats(items){
   const pending = items.filter(t=>t.status!=="done").length;
@@ -3850,11 +4039,19 @@ function filteredFinTx(){
   });
 }
 
+function formatDateBR(iso){
+  if(!iso) return "—";
+  const [y,m,d] = iso.split("-");
+  return d+"/"+m+"/"+y;
+}
 function finTxRow(t){
   const tr = document.createElement("tr");
   const owner = userById(t.owner);
   tr.innerHTML = `
-    <td><input type="date" class="fin-editable fin-date-input" value="${t.date||""}"></td>
+    <td class="fin-date-cell">
+      <span class="fin-date-display">${formatDateBR(t.date)}</span>
+      <input type="date" class="fin-editable fin-date-input" value="${t.date||""}">
+    </td>
     <td><input type="text" class="fin-editable fin-desc" value="${escapeHtml(t.desc)}"></td>
     <td></td>
     <td></td>
@@ -3880,7 +4077,11 @@ function finTxRow(t){
   USERS.forEach(u=>{ const o=document.createElement("option"); o.value=u.id; o.textContent=u.name; if(u.id===t.owner) o.selected=true; ownerSel.appendChild(o); });
   ownerTd.appendChild(ownerSel);
 
-  tr.querySelector(".fin-date-input").addEventListener("change", e=>{ t.date=e.target.value; save(FIN_TX_KEY,finTx); renderFinanceiro(); });
+  tr.querySelector(".fin-date-input").addEventListener("change", e=>{ t.date=e.target.value; tr.querySelector(".fin-date-display").textContent = formatDateBR(t.date); save(FIN_TX_KEY,finTx); renderFinanceiro(); });
+  tr.querySelector(".fin-date-display").addEventListener("click", ()=>{
+    const input = tr.querySelector(".fin-date-input");
+    if(input.showPicker){ input.showPicker(); } else { input.focus(); }
+  });
   tr.querySelector(".fin-desc").addEventListener("change", e=>{ t.desc=e.target.value.trim()||t.desc; save(FIN_TX_KEY,finTx); });
   tr.querySelector(".fin-amount-input").addEventListener("change", e=>{ const v=parseAmountInput(e.target.value); if(v>0){ t.amount=v; save(FIN_TX_KEY,finTx); renderFinanceiro(); } });
   catSel.addEventListener("change", e=>{ t.category=e.target.value; save(FIN_TX_KEY,finTx); renderFinanceiro(); });
@@ -3967,7 +4168,33 @@ function renderFinanceiro(){
   fillFinCategorySelects();
   document.getElementById("finMonthFilter").value = finMonthFilter;
   renderFinTypeFilters(); renderFinCatFilters(); renderFinOwnerFilters();
-  renderFinTable(); renderFinStats(); renderFinByCategory(); renderFinRecurring();
+  renderFinTable(); renderFinStats(); renderFinByCategory(); renderFinRecurring(); renderFinTrend();
+}
+function renderFinTrend(){
+  const wrap = document.getElementById("finTrendChart");
+  if(!wrap) return;
+  const months = [];
+  const base = new Date();
+  for(let i=5;i>=0;i--){
+    const d = new Date(base.getFullYear(), base.getMonth()-i, 1);
+    months.push(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"));
+  }
+  const bars = months.map(m=>{
+    const txs = finTx.filter(t=>t.date && t.date.startsWith(m));
+    const net = txs.reduce((s,t)=> s + (t.type==="receita"? Number(t.amount)||0 : -(Number(t.amount)||0)), 0);
+    const [y,mm] = m.split("-");
+    return {label: MESES_ABREV[Number(mm)-1], value: Math.round(net/1000)}; // em milhares, pra caber no gráfico
+  });
+  const allZero = bars.every(b=>b.value===0);
+  if(allZero){
+    wrap.innerHTML = '<div class="hoje-empty-mini">Sem transações nos últimos 6 meses</div>';
+    return;
+  }
+  wrap.innerHTML = miniBarChart(bars, {height:110});
+  const hint = document.createElement("div");
+  hint.style.cssText = "font-size:9.5px; color:var(--text-faint); text-align:center; margin-top:2px;";
+  hint.textContent = "saldo líquido, em milhares de "+CURRENCY;
+  wrap.appendChild(hint);
 }
 document.getElementById("finMonthFilter").addEventListener("change", e=>{
   finMonthFilter = e.target.value || todayISO().slice(0,7);
@@ -4014,7 +4241,7 @@ function renderWaterCups(){
   for(let i=1;i<=WATER_TARGET;i++){
     const btn = document.createElement("button");
     btn.className = "cup-btn" + (i<=day.water ? " filled" : "");
-    btn.textContent = "💧";
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13"><path fill="currentColor" d="M12 2C12 2 5 10.5 5 15.5C5 19.09 8.13 22 12 22C15.87 22 19 19.09 19 15.5C19 10.5 12 2 12 2Z"/></svg>';
     btn.title = i+"ª copa";
     btn.addEventListener("click", ()=>{
       day.water = (day.water===i) ? i-1 : i;
@@ -4137,7 +4364,8 @@ function syncMap(){
     {key: DIET_KEY,           get:()=>dietData,       set:v=>{ dietData = v; }},
     {key: GRADES_KEY,         get:()=>boletim,        set:v=>{ boletim = v; }},
     {key: MIN_APPROVAL_KEY,   get:()=>minApproval,    set:v=>{ minApproval = v; }},
-    {key: RV_STATS_KEY,       get:()=>rvStats,        set:v=>{ rvStats = v; }}
+    {key: RV_STATS_KEY,       get:()=>rvStats,        set:v=>{ rvStats = v; }},
+    {key: RV_SRS_KEY,         get:()=>rvSrs,          set:v=>{ rvSrs = v; }}
   ];
 }
 // CURRENT_USER_KEY e SRS_LOG_KEY ficam de fora de propósito: são preferências
@@ -4282,12 +4510,24 @@ function renderHoje(){
       }
     }
   }
-  document.getElementById("hojeNowBlock").innerHTML = nowEntry
-    ? `<div class="hoje-now-block"><div class="hoje-now-dot" style="background:${nowEntry.color}; color:${nowEntry.color};"></div><div class="hoje-now-info"><div class="n-label">${escapeHtml(nowEntry.label)}</div><div class="n-time">até ${minutesToTime(nowEnd)}</div></div></div>`
-    : '<div class="hoje-empty-slot">Nada agendado agora</div>';
-  document.getElementById("hojeNextBlock").innerHTML = nextEntry
-    ? `<div class="hoje-now-block"><div class="hoje-now-dot" style="background:${nextEntry.color}; color:${nextEntry.color};"></div><div class="hoje-now-info"><div class="n-label">${escapeHtml(nextEntry.label)}</div><div class="n-time">às ${minutesToTime(nextStart)}</div></div></div>`
-    : '<div class="hoje-empty-slot">Nada mais hoje</div>';
+  if(!nowEntry && !nextEntry){
+    document.getElementById("hojeNowDivider").style.display = "none";
+    document.getElementById("hojeNextLabel").style.display = "none";
+    document.getElementById("hojeNowBlock").innerHTML = '<div class="hoje-freeday"><div class="hoje-freeday-icon">☀</div><div>Nada agendado hoje</div><a class="hoje-freeday-link" data-tab-link="cronograma">Ver cronograma da semana →</a></div>';
+    document.getElementById("hojeNextBlock").innerHTML = "";
+  }else{
+    document.getElementById("hojeNowDivider").style.display = "";
+    document.getElementById("hojeNextLabel").style.display = "";
+    document.getElementById("hojeNowBlock").innerHTML = nowEntry
+      ? `<div class="hoje-now-block"><div class="hoje-now-dot" style="background:${nowEntry.color}; color:${nowEntry.color};"></div><div class="hoje-now-info"><div class="n-label">${escapeHtml(nowEntry.label)}</div><div class="n-time">até ${minutesToTime(nowEnd)}</div></div></div>`
+      : '<div class="hoje-empty-slot">Nada agendado agora</div>';
+    document.getElementById("hojeNextBlock").innerHTML = nextEntry
+      ? `<div class="hoje-now-block"><div class="hoje-now-dot" style="background:${nextEntry.color}; color:${nextEntry.color};"></div><div class="hoje-now-info"><div class="n-label">${escapeHtml(nextEntry.label)}</div><div class="n-time">às ${minutesToTime(nextStart)}</div></div></div>`
+      : '<div class="hoje-empty-slot">Nada mais hoje</div>';
+  }
+  document.querySelectorAll('#hojeNowCard [data-tab-link]').forEach(el=>{
+    el.addEventListener("click", ()=> document.querySelector('.nav-item[data-tab="'+el.dataset.tabLink+'"]').click());
+  });
 
   // Tarefas de hoje (vencendo hoje ou atrasadas, não concluídas) do usuário atual
   const today = todayISO();
@@ -4315,8 +4555,8 @@ function renderHoje(){
     });
   }
 
-  // Anel de progresso: tarefas com prazo pra hoje (feitas ou não), % concluído
-  const todayAllTasks = tasks.filter(t=> t.owner===currentUserId && t.due===today);
+  // Anel de progresso: mesmo conjunto da lista ao lado (vencidas + hoje), pra não mostrar números diferentes
+  const todayAllTasks = tasks.filter(t=> t.owner===currentUserId && t.due && t.due<=today);
   const todayDoneTasks = todayAllTasks.filter(t=>t.status==="done");
   const ringPct = todayAllTasks.length ? todayDoneTasks.length/todayAllTasks.length : 0;
   const ringCircumference = 264; // 2*pi*42, arredondado
@@ -4511,6 +4751,21 @@ function traduzErroLogin_(msg){
   return msg;
 }
 
+function showLoginView(view){
+  ["Normal","Forgot","Recovery"].forEach(v=>{
+    document.getElementById("loginView"+v).style.display = (v.toLowerCase()===view) ? "block" : "none";
+  });
+}
+
+// se o link do email de recuperação foi clicado, o Supabase dispara esse evento
+// assim que o SDK carrega — precisa estar pronto ANTES de checkSession_ rodar
+sb.auth.onAuthStateChange((event)=>{
+  if(event === "PASSWORD_RECOVERY"){
+    document.getElementById("loginScreen").classList.remove("hidden");
+    showLoginView("recovery");
+  }
+});
+
 async function checkSession_(){
   const {data:{session}} = await sb.auth.getSession();
   if(!session){
@@ -4544,7 +4799,14 @@ async function checkSession_(){
   }
   startSyncLoop();
 }
-checkSession_();
+// se a URL indica que é um clique no link de recuperação, espera o evento PASSWORD_RECOVERY
+// em vez de seguir direto pro checkSession_ normal (que trocaria de tela antes da hora)
+if(window.location.hash.includes("type=recovery")){
+  document.getElementById("loginScreen").classList.remove("hidden");
+  showLoginView("recovery");
+}else{
+  checkSession_();
+}
 
 document.getElementById("btnLogin").addEventListener("click", async ()=>{
   const errEl = document.getElementById("loginError");
@@ -4567,6 +4829,57 @@ document.getElementById("btnLogin").addEventListener("click", async ()=>{
 });
 document.getElementById("loginPassword").addEventListener("keydown", e=>{ if(e.key==="Enter") document.getElementById("btnLogin").click(); });
 document.getElementById("loginUsername").addEventListener("keydown", e=>{ if(e.key==="Enter") document.getElementById("loginPassword").focus(); });
+
+/* ---- esqueci minha senha ---- */
+document.getElementById("linkForgotPassword").addEventListener("click", e=>{
+  e.preventDefault();
+  document.getElementById("forgotEmail").value = document.getElementById("loginUsername").value;
+  document.getElementById("forgotError").textContent = "";
+  document.getElementById("forgotStatus").textContent = "";
+  showLoginView("forgot");
+});
+document.getElementById("linkBackToLogin").addEventListener("click", e=>{ e.preventDefault(); showLoginView("normal"); });
+document.getElementById("btnSendReset").addEventListener("click", async ()=>{
+  const errEl = document.getElementById("forgotError");
+  const statusEl = document.getElementById("forgotStatus");
+  errEl.textContent = ""; statusEl.textContent = "";
+  const email = document.getElementById("forgotEmail").value.trim();
+  if(!email){ errEl.textContent = "Digita seu email"; return; }
+  statusEl.textContent = "Enviando…";
+  try{
+    const redirectTo = window.location.origin + window.location.pathname;
+    const {error} = await sb.auth.resetPasswordForEmail(email, {redirectTo});
+    statusEl.textContent = "";
+    if(error){ errEl.textContent = error.message; return; }
+    statusEl.textContent = "Link enviado! Confere sua caixa de entrada (e o spam).";
+  }catch(err){
+    statusEl.textContent = "";
+    errEl.textContent = "Erro de conexão: " + (err && err.message ? err.message : String(err));
+  }
+});
+
+/* ---- definir nova senha (depois de clicar no link do email) ---- */
+document.getElementById("btnSetNewPassword").addEventListener("click", async ()=>{
+  const errEl = document.getElementById("recoveryError");
+  const statusEl = document.getElementById("recoveryStatus");
+  errEl.textContent = ""; statusEl.textContent = "";
+  const p1 = document.getElementById("recoveryPassword").value;
+  const p2 = document.getElementById("recoveryPassword2").value;
+  if(!p1 || p1.length<6){ errEl.textContent = "A senha precisa ter no mínimo 6 caracteres"; return; }
+  if(p1 !== p2){ errEl.textContent = "As duas senhas não são iguais"; return; }
+  statusEl.textContent = "Salvando…";
+  try{
+    const {error} = await sb.auth.updateUser({password: p1});
+    statusEl.textContent = "";
+    if(error){ errEl.textContent = error.message; return; }
+    statusEl.textContent = "Senha alterada! Entrando…";
+    clearLocalAppData_();
+    setTimeout(()=>{ window.location.href = window.location.origin + window.location.pathname; }, 1200);
+  }catch(err){
+    statusEl.textContent = "";
+    errEl.textContent = "Erro de conexão: " + (err && err.message ? err.message : String(err));
+  }
+});
 
 document.getElementById("navLogoutBtn").addEventListener("click", async ()=>{
   if(!confirm("Sair da sua conta?")) return;
