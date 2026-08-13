@@ -4234,6 +4234,31 @@ function forceLogout_(msg){
   alert(msg || "Sua sessão expirou. Faz login de novo.");
   location.reload();
 }
+// GET com os dados dentro da própria URL — sobrevive ao redirecionamento
+// interno do Apps Script (POST vira GET nesse redirecionamento nos
+// navegadores, então evitamos depender de corpo de requisição).
+async function apiCall_(url, payloadObj){
+  const q = "?payload=" + encodeURIComponent(JSON.stringify(payloadObj));
+  const res = await fetch(url + q);
+  return await res.json();
+}
+const MAX_URL_PAYLOAD = 600; // caracteres brutos por fatia — com acentos/aspas a URL final expande ~2.7x, isso mantém a URL final com folga abaixo de 2000
+async function sendKeyValue_(key, value){
+  const valueJson = JSON.stringify(value);
+  if(encodeURIComponent(valueJson).length <= MAX_URL_PAYLOAD){
+    return await apiCall_(apiUrl, {action:"setAll", token: sessionToken, data:{[key]: value}});
+  }
+  // valor grande demais pra uma URL só (ex: cronograma inteiro) — fatia e remonta do outro lado
+  const requestId = uid2();
+  const totalChunks = Math.ceil(valueJson.length / MAX_URL_PAYLOAD);
+  let lastRes = null;
+  for(let i=0;i<totalChunks;i++){
+    const chunk = valueJson.slice(i*MAX_URL_PAYLOAD, (i+1)*MAX_URL_PAYLOAD);
+    lastRes = await apiCall_(apiUrl, {action:"setChunk", token: sessionToken, key, requestId, chunkIndex:i, totalChunks, chunk});
+    if(!lastRes || !lastRes.ok) return lastRes;
+  }
+  return lastRes;
+}
 async function flushSync(){
   if(!apiUrl || !sessionToken) return null;
   const payload = syncQueue;
@@ -4241,15 +4266,15 @@ async function flushSync(){
   if(Object.keys(payload).length === 0) return null; // nada pra enviar
   setSyncStatus("syncing");
   try{
-    const res = await fetch(apiUrl, {
-      method: "POST",
-      headers: {"Content-Type": "text/plain;charset=utf-8"},
-      body: JSON.stringify({action:"setAll", token: sessionToken, data: payload})
-    });
-    const json = await res.json();
-    if(json && json.ok){ setSyncStatus("synced"); return true; }
-    if(json && /sess(ã|a)o/i.test(json.error||"")){ forceLogout_(); return false; }
-    throw new Error(json && json.error || "resposta inválida");
+    for(const key of Object.keys(payload)){
+      const res = await sendKeyValue_(key, payload[key]);
+      if(!res || !res.ok){
+        if(res && /sess(ã|a)o/i.test(res.error||"")){ forceLogout_(); return false; }
+        throw new Error((res && res.error) || "resposta inválida");
+      }
+    }
+    setSyncStatus("synced");
+    return true;
   }catch(err){
     Object.assign(syncQueue, payload); // devolve pra fila pra tentar de novo depois
     setSyncStatus("error", String(err.message||err));
@@ -4260,12 +4285,7 @@ async function flushSync(){
 async function pullAll(){
   if(!apiUrl || !sessionToken) return null;
   try{
-    const res = await fetch(apiUrl, {
-      method: "POST",
-      headers: {"Content-Type": "text/plain;charset=utf-8"},
-      body: JSON.stringify({action:"getAll", token: sessionToken})
-    });
-    const json = await res.json();
+    const json = await apiCall_(apiUrl, {action:"getAll", token: sessionToken});
     if(json && json.ok) return json.data || {};
     if(json && /sess(ã|a)o/i.test(json.error||"")){ forceLogout_(); return null; }
     setSyncStatus("error", json && json.error ? json.error : "resposta inesperada da API");
@@ -4582,11 +4602,7 @@ document.getElementById("btnLogin").addEventListener("click", async ()=>{
   if(!username || !password){ errEl.textContent = "Preenche usuário e senha"; return; }
   statusEl.textContent = "Entrando…";
   try{
-    const res = await fetch(url, {
-      method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body: JSON.stringify({action:"login", username, password})
-    });
-    const json = await res.json();
+    const json = await apiCall_(url, {action:"login", username, password});
     statusEl.textContent = "";
     if(json && json.ok){
       localStorage.setItem(API_URL_KEY, url);
@@ -4610,7 +4626,7 @@ document.getElementById("loginUsername").addEventListener("keydown", e=>{ if(e.k
 document.getElementById("navLogoutBtn").addEventListener("click", async ()=>{
   if(!confirm("Sair da sua conta?")) return;
   try{
-    await fetch(apiUrl, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify({action:"logout", token: sessionToken}) });
+    await apiCall_(apiUrl, {action:"logout", token: sessionToken});
   }catch(e){}
   [SESSION_TOKEN_KEY, SESSION_ROLE_KEY, SESSION_DISPLAYNAME_KEY, SESSION_USERNAME_KEY].forEach(k=>localStorage.removeItem(k));
   clearLocalAppData_();
@@ -4621,11 +4637,7 @@ document.getElementById("navLogoutBtn").addEventListener("click", async ()=>{
 async function adminCall_(action, extra){
   if(!apiUrl || !sessionToken) return {ok:false, error:"sem sessão"};
   try{
-    const res = await fetch(apiUrl, {
-      method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body: JSON.stringify(Object.assign({action, token: sessionToken}, extra||{}))
-    });
-    return await res.json();
+    return await apiCall_(apiUrl, Object.assign({action, token: sessionToken}, extra||{}));
   }catch(err){
     return {ok:false, error:"sem conexão com a API"};
   }
