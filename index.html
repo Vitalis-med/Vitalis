@@ -431,20 +431,67 @@
   .gr-empty-items{font-size:11.5px; color:var(--text-faint); font-style:italic; padding:8px 0;}
 
   /* ---- Hoje (página inicial) ---- */
-  .hoje-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; grid-auto-rows:min-content;}
+  .hoje-hero{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:24px;
+    background:linear-gradient(135deg, var(--card) 0%, var(--card-2) 100%);
+    border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:28px 32px; margin-bottom:20px; position:relative; overflow:hidden;
+    background-image:
+      linear-gradient(135deg, var(--card) 0%, var(--card-2) 100%),
+      linear-gradient(rgba(45,212,191,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(45,212,191,.03) 1px, transparent 1px);
+    background-size:auto, 18px 18px, 18px 18px;
+  }
+  .hoje-hero::before{content:""; position:absolute; top:-1px; left:32px; width:36px; height:3px; background:var(--primary); border-radius:0 0 3px 3px; box-shadow:0 0 8px rgba(45,212,191,.7);}
+  .hoje-hero-eyebrow{font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--primary); margin-bottom:6px;}
+  .hoje-hero-left h1{font-family:'Fraunces',serif; font-size:30px; font-weight:700; margin:0 0 16px; letter-spacing:-.01em; color:#F5F6F7;}
+  .hoje-quick-actions{display:flex; gap:8px;}
+  .hoje-hero-right{text-align:right; flex-shrink:0;}
+  .hoje-pulse{width:220px; height:34px; display:block; margin-left:auto;}
+  .hoje-pulse polyline{fill:none; stroke:var(--primary); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; filter:drop-shadow(0 0 4px rgba(45,212,191,.8)); stroke-dasharray:40 480; stroke-dashoffset:0; animation:pulseSweepHero 2.8s linear infinite;}
+  @keyframes pulseSweepHero{ to{ stroke-dashoffset:-560; } }
+  .hoje-hero-clock{font-family:'IBM Plex Mono',monospace; font-size:44px; font-weight:700; color:var(--primary-strong); line-height:1; text-shadow:0 0 16px rgba(45,212,191,.4); margin-top:4px;}
+  .hoje-hero-clockday{font-size:11px; color:var(--text-soft); text-transform:capitalize; margin-top:4px; font-family:'IBM Plex Mono',monospace;}
+
+  .hoje-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    grid-template-areas:
+      "now now progress tasks"
+      "now now habits   tasks"
+      "revisao provas provas stats";
+    gap:16px;
+  }
+  .hoje-area-now{grid-area:now;}
+  .hoje-area-progress{grid-area:progress;}
+  .hoje-area-tasks{grid-area:tasks; display:flex; flex-direction:column;}
+  .hoje-area-habits{grid-area:habits;}
+  .hoje-area-revisao{grid-area:revisao;}
+  .hoje-area-provas{grid-area:provas;}
+  .hoje-area-stats{grid-area:stats;}
+
   .hoje-card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; box-shadow:var(--shadow-card); position:relative;}
   .hoje-card::before{content:""; position:absolute; top:-1px; left:20px; width:28px; height:3px; background:var(--primary); border-radius:0 0 3px 3px; box-shadow:0 0 6px rgba(45,212,191,.6);}
   .hoje-card h4{font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); font-weight:700; margin:0 0 12px; font-family:'IBM Plex Mono',monospace;}
   .hoje-card-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
   .hoje-card-head h4{margin:0;}
   .hoje-count{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-faint); background:var(--card-2); border-radius:999px; padding:1px 9px;}
-  .hoje-now{grid-column:span 1; grid-row:span 2;}
   .hoje-divider{height:1px; background:var(--border); margin:16px 0;}
   .hoje-now-block{display:flex; align-items:center; gap:12px;}
   .hoje-now-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0; box-shadow:0 0 10px currentColor;}
   .hoje-now-info .n-label{font-family:'Fraunces',serif; font-size:16px; font-weight:600; color:#F0F2F4; line-height:1.3;}
   .hoje-now-info .n-time{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-soft); margin-top:2px;}
   .hoje-empty-slot{font-size:12.5px; color:var(--text-faint); font-style:italic;}
+
+  .hoje-area-progress{display:flex; flex-direction:column; align-items:center;}
+  .hoje-ring-wrap{position:relative; width:110px; height:110px; margin:4px auto 0;}
+  .hoje-ring{width:100%; height:100%; transform:rotate(-90deg);}
+  .hoje-ring-bg{fill:none; stroke:var(--border); stroke-width:8;}
+  .hoje-ring-fg{fill:none; stroke:var(--primary); stroke-width:8; stroke-linecap:round; stroke-dasharray:264; stroke-dashoffset:264; filter:drop-shadow(0 0 4px rgba(45,212,191,.6)); transition:stroke-dashoffset .5s ease;}
+  .hoje-ring-label{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+  .hoje-ring-num{font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:700; color:#F0F2F4;}
+  .hoje-ring-sub{font-size:9px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.04em; margin-top:1px;}
+
   .hoje-task-row{display:flex; align-items:center; gap:9px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px;}
   .hoje-task-row:last-child{border-bottom:none;}
   .hoje-task-row .htk{width:15px; height:15px; border-radius:4px; border:1.5px solid var(--border-strong); flex-shrink:0; cursor:pointer; background:var(--card); position:relative;}
@@ -454,6 +501,11 @@
   .hoje-task-row.done .htxt{text-decoration:line-through; color:var(--text-faint);}
   .hoje-task-row .hdue{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-faint);}
   .hoje-task-row .hdue.overdue{color:var(--now); font-weight:700;}
+  .hoje-quick-add{display:flex; gap:6px; margin-top:auto; padding-top:12px;}
+  .hoje-quick-add input{flex:1; padding:7px 10px; border:1px solid var(--border-strong); border-radius:var(--radius-sm); font-size:12px; font-family:'Inter'; background:var(--paper); color:var(--text);}
+  .hoje-quick-add button{width:30px; height:30px; border-radius:var(--radius-sm); border:1px solid var(--border-strong); background:var(--card-2); color:var(--text-soft); cursor:pointer; font-size:15px; flex-shrink:0;}
+  .hoje-quick-add button:hover{border-color:var(--primary); color:var(--primary);}
+
   .hoje-habit-row{display:flex; align-items:center; justify-content:space-between; padding:6px 0; font-size:12.5px;}
   .hoje-habit-row .hname{color:var(--text);}
   .hoje-habit-row .htoggle{width:22px; height:22px; border-radius:6px; border:1.5px solid var(--border-strong); background:var(--card); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; color:transparent;}
@@ -463,12 +515,29 @@
   .hoje-prova-row .hp-dot{width:6px; height:6px; border-radius:50%; flex-shrink:0;}
   .hoje-prova-row .hp-text{flex:1; color:var(--text);}
   .hoje-prova-row .hp-date{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--primary);}
-  .hoje-mini-stats{display:flex; justify-content:space-around; align-items:center; text-align:center;}
-  .hoje-mini-stat .hoje-mini-num{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:#F0F2F4;}
-  .hoje-mini-stat .hoje-mini-label{font-size:9.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.04em; margin-top:4px;}
+  .hoje-mini-stats{display:flex; flex-direction:column; justify-content:center; gap:14px;}
+  .hoje-mini-stat{display:flex; align-items:baseline; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:10px;}
+  .hoje-mini-stat:last-child{border-bottom:none; padding-bottom:0;}
+  .hoje-mini-stat .hoje-mini-num{font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:700; color:#F0F2F4;}
+  .hoje-mini-stat .hoje-mini-label{font-size:9.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.04em;}
   .hoje-empty-mini{font-size:11.5px; color:var(--text-faint); font-style:italic; padding:4px 0;}
-  @media (max-width:1100px){ .hoje-grid{grid-template-columns:repeat(2,1fr);} .hoje-now{grid-column:span 2;} }
-  @media (max-width:700px){ .hoje-grid{grid-template-columns:1fr;} .hoje-now{grid-column:span 1;} }
+  .hoje-revisao-inline{display:flex; gap:20px;}
+  .hoje-revisao-inline .hri-num{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:#F0F2F4;}
+  .hoje-revisao-inline .hri-label{font-size:9.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.04em; margin-top:2px;}
+
+  @media (max-width:1100px){
+    .hoje-grid{grid-template-columns:repeat(2,1fr); grid-template-areas:
+      "now now" "progress habits" "tasks tasks" "revisao stats" "provas provas";}
+    .hoje-hero{flex-direction:column; align-items:flex-start;}
+    .hoje-hero-right{text-align:left;}
+    .hoje-pulse{margin-left:0;}
+  }
+  @media (max-width:700px){
+    .hoje-grid{grid-template-columns:1fr; grid-template-areas:
+      "now" "progress" "tasks" "habits" "revisao" "provas" "stats";}
+    .hoje-hero-clock{font-size:34px;}
+    .hoje-pulse{width:100%;}
+  }
 
   /* ---- Subtarefas ---- */
   .subtask-list{display:flex; flex-direction:column; gap:5px; margin-top:5px;}
@@ -845,15 +914,26 @@
 
   <!-- ================= HOJE ================= -->
   <section id="hoje" class="panel active">
-    <header class="page-head">
-      <div>
+    <div class="hoje-hero">
+      <div class="hoje-hero-left">
+        <div class="hoje-hero-eyebrow" id="hojeDateLine">—</div>
         <h1 id="hojeGreeting">Bom dia, Paulo</h1>
-        <p id="hojeDateLine">—</p>
+        <div class="hoje-quick-actions">
+          <button class="btn sm" id="hojeQuickTask">+ Tarefa</button>
+          <button class="btn sm" id="hojeQuickNote">+ Anotação</button>
+        </div>
       </div>
-    </header>
+      <div class="hoje-hero-right">
+        <svg class="hoje-pulse" viewBox="0 0 260 50" preserveAspectRatio="none">
+          <polyline points="0,25 55,25 65,25 75,7 85,43 95,25 105,25 155,25 165,25 175,12 185,38 195,25 205,25 260,25"/>
+        </svg>
+        <div class="hoje-hero-clock" id="hojeHeroClock">--:--</div>
+        <div class="hoje-hero-clockday" id="hojeHeroDay">—</div>
+      </div>
+    </div>
 
     <div class="hoje-grid">
-      <div class="hoje-card hoje-now">
+      <div class="hoje-card hoje-area-now">
         <h4>Agora</h4>
         <div id="hojeNowBlock"></div>
         <div class="hoje-divider"></div>
@@ -861,30 +941,45 @@
         <div id="hojeNextBlock"></div>
       </div>
 
-      <div class="hoje-card">
-        <div class="hoje-card-head"><h4>Tarefas de hoje</h4><span class="hoje-count" id="hojeTaskCount">0</span></div>
-        <div id="hojeTaskList"></div>
+      <div class="hoje-card hoje-area-progress">
+        <h4>Progresso do dia</h4>
+        <div class="hoje-ring-wrap">
+          <svg class="hoje-ring" viewBox="0 0 100 100">
+            <circle class="hoje-ring-bg" cx="50" cy="50" r="42"/>
+            <circle class="hoje-ring-fg" id="hojeRingFg" cx="50" cy="50" r="42"/>
+          </svg>
+          <div class="hoje-ring-label"><div class="hoje-ring-num" id="hojeRingNum">0/0</div><div class="hoje-ring-sub">tarefas</div></div>
+        </div>
       </div>
 
-      <div class="hoje-card">
+      <div class="hoje-card hoje-area-tasks">
+        <div class="hoje-card-head"><h4>Tarefas de hoje</h4><span class="hoje-count" id="hojeTaskCount">0</span></div>
+        <div id="hojeTaskList"></div>
+        <div class="hoje-quick-add">
+          <input type="text" id="hojeQuickAddInput" placeholder="Adicionar tarefa pra hoje…">
+          <button id="hojeQuickAddBtn">+</button>
+        </div>
+      </div>
+
+      <div class="hoje-card hoje-area-habits">
         <div class="hoje-card-head"><h4>Hábitos de hoje</h4></div>
         <div id="hojeHabitList"></div>
       </div>
 
-      <div class="hoje-card">
+      <div class="hoje-card hoje-area-revisao">
         <div class="hoje-card-head"><h4>Revisão espaçada</h4></div>
         <div id="hojeRevisao"></div>
       </div>
 
-      <div class="hoje-card">
+      <div class="hoje-card hoje-area-provas">
         <div class="hoje-card-head"><h4>Próximas provas</h4></div>
         <div id="hojeProvas"></div>
       </div>
 
-      <div class="hoje-card hoje-mini-stats">
+      <div class="hoje-card hoje-area-stats hoje-mini-stats">
         <div class="hoje-mini-stat"><div class="hoje-mini-num" id="hojeFinSaldo">—</div><div class="hoje-mini-label">Saldo do mês</div></div>
         <div class="hoje-mini-stat"><div class="hoje-mini-num" id="hojeAgua">0/8</div><div class="hoje-mini-label">Água hoje</div></div>
-        <div class="hoje-mini-stat"><div class="hoje-mini-num" id="hojeStreak">0</div><div class="hoje-mini-label">Dias seguidos</div></div>
+        <div class="hoje-mini-stat"><div class="hoje-mini-num" id="hojeStreak">0</div><div class="hoje-mini-label">Sequência</div></div>
       </div>
     </div>
   </section>
@@ -3269,6 +3364,7 @@ function renderProfileSwitcher(){
       if(document.getElementById("boletim").classList.contains("active")){ renderBoletimOwnerFilter(); renderBoletim(); }
       if(document.getElementById("financeiro").classList.contains("active")) renderFinanceiro();
       if(document.getElementById("dieta").classList.contains("active")) renderDieta();
+      if(document.getElementById("hoje").classList.contains("active")) renderHoje();
       toast("Perfil: "+u.name);
     });
     wrap.appendChild(btn);
@@ -4083,6 +4179,8 @@ function renderHoje(){
   document.getElementById("hojeGreeting").textContent = hojeGreetingWord()+", "+firstName;
   const now = new Date();
   document.getElementById("hojeDateLine").textContent = WEEKDAYS_FULL_LOWER[now.getDay()].replace(/^./,c=>c.toUpperCase())+" · "+now.toLocaleDateString("pt-BR");
+  document.getElementById("hojeHeroClock").textContent = String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
+  document.getElementById("hojeHeroDay").textContent = WEEKDAYS_FULL_LOWER[now.getDay()];
 
   // Agora / A seguir (cronograma do próprio usuário)
   const schedule = getSchedule(currentUserId);
@@ -4142,6 +4240,14 @@ function renderHoje(){
     });
   }
 
+  // Anel de progresso: tarefas com prazo pra hoje (feitas ou não), % concluído
+  const todayAllTasks = tasks.filter(t=> t.owner===currentUserId && t.due===today);
+  const todayDoneTasks = todayAllTasks.filter(t=>t.status==="done");
+  const ringPct = todayAllTasks.length ? todayDoneTasks.length/todayAllTasks.length : 0;
+  const ringCircumference = 264; // 2*pi*42, arredondado
+  document.getElementById("hojeRingFg").style.strokeDashoffset = (ringCircumference - ringPct*ringCircumference).toFixed(1);
+  document.getElementById("hojeRingNum").textContent = todayDoneTasks.length+"/"+todayAllTasks.length;
+
   // Hábitos de hoje
   const habitWrap = document.getElementById("hojeHabitList");
   const myHabits = getUserHabits(currentUserId);
@@ -4164,9 +4270,9 @@ function renderHoje(){
   const activeNotes = notes.filter(n=>n.srs && n.srs.enabled);
   const dueNotes = activeNotes.filter(n=>n.srs.next <= today);
   document.getElementById("hojeRevisao").innerHTML = `
-    <div class="hoje-mini-stats" style="padding:0;">
-      <div class="hoje-mini-stat"><div class="hoje-mini-num">${dueNotes.length}</div><div class="hoje-mini-label">Pra revisar</div></div>
-      <div class="hoje-mini-stat"><div class="hoje-mini-num">${computeSrsStreak()}</div><div class="hoje-mini-label">Sequência</div></div>
+    <div class="hoje-revisao-inline">
+      <div><div class="hri-num">${dueNotes.length}</div><div class="hri-label">Pra revisar</div></div>
+      <div><div class="hri-num">${computeSrsStreak()}</div><div class="hri-label">Sequência</div></div>
     </div>
   `;
 
@@ -4207,6 +4313,25 @@ function renderHoje(){
   const maxStreak = myHabits.reduce((m,h)=>Math.max(m, computeStreak(h)), 0);
   document.getElementById("hojeStreak").textContent = maxStreak;
 }
+document.getElementById("hojeQuickAddBtn").addEventListener("click", ()=>{
+  const input = document.getElementById("hojeQuickAddInput");
+  const text = input.value.trim();
+  if(!text) return;
+  tasks.push({id:uid(), text, category:CATEGORIES[0].name, owner:currentUserId, priority:"media", due:todayISO(), recurrence:null, subtasks:[], scheduledAt:null, status:"todo", doneAt:null});
+  save(TASKS_KEY, tasks);
+  input.value = "";
+  renderHoje();
+  toast("Tarefa adicionada");
+});
+document.getElementById("hojeQuickAddInput").addEventListener("keydown", e=>{ if(e.key==="Enter") document.getElementById("hojeQuickAddBtn").click(); });
+document.getElementById("hojeQuickTask").addEventListener("click", ()=>{
+  document.querySelector('.nav-item[data-tab="tarefas"]').click();
+  setTimeout(()=> document.getElementById("btnNewTask").click(), 60);
+});
+document.getElementById("hojeQuickNote").addEventListener("click", ()=>{
+  document.querySelector('.nav-item[data-tab="notas"]').click();
+  setTimeout(()=> document.getElementById("btnNewNote").click(), 60);
+});
 
 
 function renderEverything(){
