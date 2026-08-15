@@ -77,6 +77,8 @@
     position:sticky;
     top:0;
     height:100vh;
+    overflow-y:auto;
+    overflow-x:hidden;
     border-right:1px solid var(--border);
     background-image:
       linear-gradient(rgba(45,212,191,.035) 1px, transparent 1px),
@@ -1798,7 +1800,18 @@
 ====================================================================== */
 const SUPABASE_URL = "https://zqxhlgicnaadlqbjvxis.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_BlaldfJdGuFw7JpXwzzuXg_wBP7u_Wj";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Se a biblioteca do Supabase (carregada via CDN, ver <script> no <head>) não
+// carregar por qualquer motivo — internet instável, bloqueador de anúncio,
+// CDN fora do ar — "supabase" nem existe aqui, e criar o client direto
+// quebraria a página inteira em silêncio (nenhum botão funcionaria depois
+// disso, sem nenhuma mensagem de erro). Em vez disso, capturamos a falha,
+// deixamos "sb" como null, e cada ponto que usa "sb" já trata isso.
+let sb = null;
+try{
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}catch(e){
+  console.error("Falha ao inicializar o Supabase (biblioteca não carregou):", e);
+}
 
 // cache leve só pra desenhar a tela na hora, sem esperar a checagem de
 // verdade (que é assíncrona) — a fonte de verdade é sempre a sessão real
@@ -2054,7 +2067,7 @@ if(tasks === null){
   if(oldV2){
     tasks = oldV2.map(t => ({...t, owner: t.owner || currentUserId}));
   }else if(oldV1){
-    tasks = oldV1.map(t => ({ id:t.id, text:t.text, category:"Outro", priority:"media", due:"", owner:currentUserId, status: t.done?"done":"todo", doneAt: t.done?Date.now():null }));
+    tasks = oldV1.map(t => ({ id:t.id, text:t.text, category:"Outro", priority:"media", due:"", owner:currentUserId, status: t.done?"done":"todo", doneAt: t.done?new Date().toISOString():null }));
   }else{
     tasks = [];
   }
@@ -3320,13 +3333,27 @@ function renderTasks(){
   renderHabits();
   renderTaskTrend();
 }
+// "doneAt" já foi salvo de duas formas diferentes em pontos diferentes do
+// código (timestamp numérico de Date.now() e string ISO de toISOString()) —
+// isso foi padronizado pra string ISO em todo lugar que grava, mas tarefas
+// concluídas antes dessa correção podem continuar salvas com o formato
+// antigo (número). Essa função aceita os dois formatos sem quebrar.
+function doneAtMs_(t){
+  if(!t.doneAt) return null;
+  const ms = (typeof t.doneAt === "number") ? t.doneAt : new Date(t.doneAt).getTime();
+  return isNaN(ms) ? null : ms;
+}
 function renderTaskTrend(){
   const wrap = document.getElementById("taskTrendChart");
   if(!wrap) return;
   const days = [];
   for(let i=6;i>=0;i--) days.push(addDaysISO(todayISO(), -i));
   const bars = days.map(iso=>{
-    const count = tasks.filter(t=> t.owner===currentUserId && t.status==="done" && t.doneAt && t.doneAt.slice(0,10)===iso).length;
+    const count = tasks.filter(t=>{
+      if(t.owner!==currentUserId || t.status!=="done") return false;
+      const ms = doneAtMs_(t);
+      return ms!==null && new Date(ms).toISOString().slice(0,10)===iso;
+    }).length;
     const d = new Date(iso+"T12:00:00");
     return {label: HABIT_DAY_LABELS[(d.getDay()+6)%7], value: count, color:"var(--primary)"};
   });
@@ -3340,7 +3367,11 @@ function renderStats(items){
   const pending = items.filter(t=>t.status!=="done").length;
   const overdue = items.filter(isOverdue).length;
   const weekAgo = Date.now() - 7*24*60*60*1000;
-  const doneWeek = items.filter(t=>t.status==="done" && t.doneAt && t.doneAt >= weekAgo).length;
+  const doneWeek = items.filter(t=>{
+    if(t.status!=="done") return false;
+    const ms = doneAtMs_(t);
+    return ms!==null && ms >= weekAgo;
+  }).length;
   const total = items.length;
   const doneTotal = items.filter(t=>t.status==="done").length;
   const rate = total ? Math.round((doneTotal/total)*100) : 0;
@@ -3374,7 +3405,7 @@ document.querySelectorAll(".kcol").forEach(col=>{
     const newStatus = col.dataset.status;
     const wasNotDone = t.status !== "done";
     t.status = newStatus;
-    t.doneAt = newStatus==="done" ? Date.now() : null;
+    t.doneAt = newStatus==="done" ? new Date().toISOString() : null;
     if(newStatus==="done" && wasNotDone && t.recurrence){ spawnNextRecurrence(t); }
     save(TASKS_KEY, tasks);
     draggedTaskId = null;
@@ -4759,7 +4790,9 @@ function showLoginView(view){
 
 // se o link do email de recuperação foi clicado, o Supabase dispara esse evento
 // assim que o SDK carrega — precisa estar pronto ANTES de checkSession_ rodar
-sb.auth.onAuthStateChange((event)=>{
+// (só registra se "sb" existe de verdade — ver guard lá em cima, perto de
+// "const SUPABASE_URL", pro caso da biblioteca não ter carregado)
+if(sb) sb.auth.onAuthStateChange((event)=>{
   if(event === "PASSWORD_RECOVERY"){
     document.getElementById("loginScreen").classList.remove("hidden");
     showLoginView("recovery");
@@ -4767,6 +4800,11 @@ sb.auth.onAuthStateChange((event)=>{
 });
 
 async function checkSession_(){
+  if(!sb){
+    document.getElementById("loginScreen").classList.remove("hidden");
+    setSyncStatus("unconfigured");
+    return;
+  }
   const {data:{session}} = await sb.auth.getSession();
   if(!session){
     document.getElementById("loginScreen").classList.remove("hidden");
@@ -4815,6 +4853,7 @@ document.getElementById("btnLogin").addEventListener("click", async ()=>{
   const email = document.getElementById("loginUsername").value.trim();
   const password = document.getElementById("loginPassword").value;
   if(!email || !password){ errEl.textContent = "Preenche email e senha"; return; }
+  if(!sb){ errEl.textContent = "Não foi possível conectar ao servidor. Verifica sua internet (ou desative bloqueador de anúncios) e recarrega a página."; return; }
   statusEl.textContent = "Entrando…";
   try{
     const {error} = await sb.auth.signInWithPassword({email, password});
